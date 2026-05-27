@@ -1,0 +1,15 @@
+{
+  "04DA53A76F2681": {
+    "id": "door",
+    "label": "大門",
+    "description": "偵測入口狀態、開啟紀錄與環境安全資訊。",
+    "osc": "/nfc/door"
+  },
+  "4F54E53C": {
+    "id": "air",
+    "label": "智能家電01",
+    "description": "智能家電01 互動展示，透過 NFC 感應啟動 3D 模型。",
+    "osc": "/nfc/air",
+    "model": "/models/%E6%B0%B4%E5%86%B7%E6%89%87%E4%B9%BE%E6%B7%A8.ply"
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "name": "nfc-server",
+  "version": "1.0.0",
+  "description": "NFC WebSocket bridge for ACR122U",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node --watch index.js"
+  },
+  "dependencies": {
+    "nfc-pcsc": "^0.8.1",
+    "ws": "^8.18.0"
+  }
+}

@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="zh-TW" data-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>NFC Control</title>
+
+    <!-- Anti-FOUC: apply saved theme before paint -->
+    <script>
+      (function () {
+        try {
+          var t = localStorage.getItem('theme') || 'dark'
+          document.documentElement.setAttribute('data-theme', t)
+        } catch (_) {}
+      })()
+    </script>
+
+    <!-- Google Fonts: Space Grotesk + JetBrains Mono + Pixelify Sans -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300..700&family=JetBrains+Mono:wght@300..700&family=Pixelify+Sans:wght@400..700&display=swap" rel="stylesheet" />
+
+    <!-- Chiron Hei HK (CJK) via jsDelivr -->
+    <link href="https://cdn.jsdelivr.net/npm/chiron-hei-hk@latest/css/ChironHeiHK.css" rel="stylesheet" />
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>
