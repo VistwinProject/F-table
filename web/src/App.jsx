@@ -5,10 +5,47 @@ import NfcSlot from './components/NfcSlot.jsx'
 import ConnectionStatus from './components/ConnectionStatus.jsx'
 import StudioHeader from './components/StudioHeader.jsx'
 import GaussianViewer from './components/GaussianViewer.jsx'
+import WelcomeScreen from './components/WelcomeScreen.jsx'
 
 const WS_URL       = 'ws://localhost:8787'
 const RECONNECT_MS = 3000
-const SLOT_RADIUS  = 38
+
+// ── Orbit geometry (viewBox % units) ─────────────────────────────────────────
+// Slots sit along the TOP half of a wide, flattened ellipse (a shallow dome).
+// The core sits below the ellipse center, so beams fan up-and-out to each slot.
+const ELLIPSE_CX = 50   // ellipse center x
+const ELLIPSE_CY = 70   // ellipse center y (= the side-slot baseline)
+const ORBIT_RX   = 43   // horizontal radius (wide)
+const ORBIT_RY   = 48   // vertical radius (rounded dome, not too flat)
+const ARC_START  = 180  // leftmost angle (deg)
+const ARC_SWEEP  = 180  // upper semicircle of the ellipse
+
+// Core sits ON the arc's baseline (same y as the side nodes) so the fan from
+// the core's point of view spans a TRUE 180° — NFC 01 ↔ core ↔ NFC 09 form a
+// horizontal line, with the dome opening straight up above.
+const HUB_X      = 50
+const HUB_Y      = ELLIPSE_CY
+
+// Per the design sketch, every other slot (1-indexed even = NFC 02/04/06/08) is
+// pulled inward, creating a staggered two-ring fan. The 1-indexed odd slots —
+// NFC 01/03/05/07/09 — stay on the outer ellipse, so NFC 01 and NFC 09 still sit
+// at the horizontal extremes of the 180° fan.
+const INSET_RATIO = 0.7
+
+// Position of slot i (of n) along the upper elliptical arc.
+export function slotPos(i, n) {
+  const f      = n > 1 ? i / (n - 1) : 0.5
+  const deg    = ARC_START + f * ARC_SWEEP
+  const rad    = (deg * Math.PI) / 180
+  // 0-indexed odd ↔ 1-indexed even → inset toward the core
+  const k      = (i % 2 === 1) ? INSET_RATIO : 1
+  return {
+    x: ELLIPSE_CX + ORBIT_RX * k * Math.cos(rad),
+    y: ELLIPSE_CY + ORBIT_RY * k * Math.sin(rad),
+    deg,
+    rad,
+  }
+}
 
 export const SLOTS = [
   { slotIndex: 0, label: 'NFC 01', id: 'r0' },
@@ -29,6 +66,13 @@ function nowTime() {
 }
 
 export default function App() {
+  // 'welcome' = welcome overlay shown, 'live' = main app interactive.
+  // The tablet operator triggers 'live' via a WS `session-start` broadcast.
+  // welcomeExiting drives the 600 ms fade-out animation BEFORE we actually
+  // unmount the welcome overlay, so the transition is smooth whether the
+  // trigger came from a local click or a remote WS message.
+  const [mode,              setMode]               = useState('welcome')
+  const [welcomeExiting,    setWelcomeExiting]     = useState(false)
   const [wsStatus,          setWsStatus]          = useState('connecting')
   const [slotStates,        setSlotStates]         = useState(() => Array.from({ length: 9 }, initSlotState))
   const [focusedIdx,        setFocusedIdx]         = useState(null)
@@ -108,6 +152,22 @@ export default function App() {
           }
           break
 
+        // ── Session control (broadcast by operator tablet via server) ──
+        case 'session-start':
+          // Fade the welcome overlay out first, then drop it from the tree.
+          // Matches the local-click animation so all displays look the same.
+          setWelcomeExiting(true)
+          setTimeout(() => {
+            setMode('live')
+            setWelcomeExiting(false)
+          }, 600)
+          break
+
+        case 'session-end':
+          setMode('welcome')
+          setWelcomeExiting(false)
+          break
+
         default: break
       }
     }
@@ -151,14 +211,14 @@ export default function App() {
             <ConnectionLines slots={SLOTS} slotStates={slotStates} />
 
             {SLOTS.map((slot) => {
-              const angle = (slot.slotIndex * 360 / SLOTS.length) - 90
+              const pos   = slotPos(slot.slotIndex, SLOTS.length)
               const state = slotStates[slot.slotIndex]
               return (
                 <NfcSlot
                   key={slot.id}
                   slot={slot}
-                  angle={angle}
-                  radius={SLOT_RADIUS}
+                  x={pos.x}
+                  y={pos.y}
                   connected={state.connected}
                   active={state.activeCard !== null}
                   focused={focusedIdx === slot.slotIndex}
@@ -173,15 +233,12 @@ export default function App() {
               const state     = slotStates[slot.slotIndex]
               const modelPath = state.activeCard?.data?.model
               if (!modelPath) return null
-              const angle = (slot.slotIndex * 360 / SLOTS.length) - 90
-              const rad   = (angle * Math.PI) / 180
-              const x     = 50 + SLOT_RADIUS * Math.cos(rad)
-              const y     = 50 + SLOT_RADIUS * Math.sin(rad)
+              const pos = slotPos(slot.slotIndex, SLOTS.length)
               return (
                 <div
                   key={`model-${slot.id}`}
                   className="slot-model-overlay"
-                  style={{ left: `${x}%`, top: `${y}%` }}
+                  style={{ left: `${pos.x}%`, top: `${pos.y}%` }}
                 >
                   <GaussianViewer key={state.activeCard.uid} modelPath={modelPath} />
                 </div>
@@ -200,78 +257,178 @@ export default function App() {
         <div className="frame-footer__bar" />
         <div className="frame-footer__text">AI大腦控制塔</div>
       </div>
+
+      {/* Welcome overlay — shown until the operator tablet sends a
+          `session-start` broadcast. The local click is a dev fallback only
+          (projection surfaces aren't touchable in production); when WS is
+          connected it sends the same control message so all displays sync.
+          Exit fade is driven by `welcomeExiting`, applied uniformly whether
+          the trigger came from local click or remote WS broadcast. */}
+      {mode === 'welcome' && (
+        <WelcomeScreen
+          exiting={welcomeExiting}
+          onStart={() => {
+            const ws = wsRef.current
+            if (ws && ws.readyState === WebSocket.OPEN) {
+              // The server broadcast will come back to us and the
+              // session-start case above will drive the fade-out.
+              ws.send(JSON.stringify({ type: 'session-start' }))
+            } else {
+              // No WS — do the same fade-then-mount-change locally.
+              setWelcomeExiting(true)
+              setTimeout(() => {
+                setMode('live')
+                setWelcomeExiting(false)
+              }, 600)
+            }
+          }}
+        />
+      )}
     </div>
   )
 }
 
-// Clearances in SVG viewBox units (container ≈ 555px, 1 VB ≈ 5.55px)
-// Small values so lines feel long — elements are wireframe so slight overlap is fine
-const HUB_EDGE  = 4.5   // line starts inside hub square (hub is transparent wireframe)
-const SLOT_EDGE = 3.5   // line ends just inside slot outer ring
+// Clearances in PX — lines stop short of the hub orb and the slot ring.
+// Hub SVG renders an outer ring at ~135px from centre (and a wider aura beyond);
+// 150px keeps beams from cutting through the ring while staying close to it.
+// Slot ring is 86px (43px half) + small visual gap.
+const HUB_CLEAR_PX  = 150
+const SLOT_CLEAR_PX = 50
 
-/* ── SVG Connection Lines with animated transmission ── */
+/* ── SVG Connection Lines with animated transmission ──
+   The SVG uses preserveAspectRatio="none" so viewBox 0–100 maps directly to
+   container %, the same coord system used by the CSS-positioned slots and hub.
+   Clearances are computed in px (via a measured container size) so the line
+   endpoints stay outside the hub/slot regardless of container aspect ratio. */
 function ConnectionLines({ slots, slotStates }) {
+  const svgRef = useRef(null)
+  const [dim, setDim] = useState({ w: 0, h: 0 })
+
+  useEffect(() => {
+    const el = svgRef.current
+    if (!el) return
+    const update = () => {
+      const r = el.getBoundingClientRect()
+      if (r.width > 0 && r.height > 0) setDim({ w: r.width, h: r.height })
+    }
+    update()
+    const ro = new ResizeObserver(update)
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
+
+  const W = dim.w
+  const H = dim.h
+
+  // Wait for container measurement before drawing — otherwise positions and
+  // px-based stroke widths render at a wrong scale on first frame.
+  if (!W || !H) {
+    return <svg ref={svgRef} className="connections" />
+  }
+
+  // % → px helpers (one shared coord system: container pixels)
+  const toPx = (xPct, yPct) => ({
+    x: (xPct / 100) * W,
+    y: (yPct / 100) * H,
+  })
+  const hub = toPx(HUB_X, HUB_Y)
+
   return (
-    <svg className="connections" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet">
+    <svg
+      ref={svgRef}
+      className="connections"
+      viewBox={`0 0 ${W} ${H}`}
+      preserveAspectRatio="none"
+    >
       <defs>
-        <filter id="pkt-glow" x="-100%" y="-100%" width="300%" height="300%">
-          <feGaussianBlur stdDeviation="0.6" result="blur" />
-          <feMerge>
-            <feMergeNode in="blur" />
-            <feMergeNode in="SourceGraphic" />
-          </feMerge>
+        {/* Soft cyan bloom — the halo around each beam */}
+        <filter id="beam-bloom" x="-50%" y="-50%" width="200%" height="200%">
+          <feGaussianBlur stdDeviation="4" />
+        </filter>
+        {/* Stronger bloom — for the traveling pulse and active beams */}
+        <filter id="pulse-bloom" x="-100%" y="-100%" width="300%" height="300%">
+          <feGaussianBlur stdDeviation="6" />
         </filter>
       </defs>
 
       {slots.map((slot) => {
-        const angle = (slot.slotIndex * 360 / slots.length) - 90
-        const rad   = (angle * Math.PI) / 180
-        const cos   = Math.cos(rad)
-        const sin   = Math.sin(rad)
+        const pos = slotPos(slot.slotIndex, slots.length)
+        const sp  = toPx(pos.x, pos.y)
 
-        const hx = 50 + HUB_EDGE * cos
-        const hy = 50 + HUB_EDGE * sin
-        const sx = 50 + (SLOT_RADIUS - SLOT_EDGE) * cos
-        const sy = 50 + (SLOT_RADIUS - SLOT_EDGE) * sin
+        // Direction (px) from hub center to slot center
+        const dx   = sp.x - hub.x
+        const dy   = sp.y - hub.y
+        const dist = Math.hypot(dx, dy) || 1
+        const ux   = dx / dist
+        const uy   = dy / dist
+
+        // Endpoints clear hub box and slot ring by px amounts (uniform in every direction)
+        const hx = hub.x + HUB_CLEAR_PX  * ux
+        const hy = hub.y + HUB_CLEAR_PX  * uy
+        const sx = sp.x  - SLOT_CLEAR_PX * ux
+        const sy = sp.y  - SLOT_CLEAR_PX * uy
 
         const state       = slotStates[slot.slotIndex]
         const isActive    = state.activeCard !== null
         const isConnected = state.connected
+        const stateSuffix = isActive ? '--active' : isConnected ? '--connected' : ''
 
-        // Packet travels slot edge → hub edge (data flows inward to core)
-        const packetPath = `M ${sx} ${sy} L ${hx} ${hy}`
-        // Vary duration slightly per slot so not all active lines feel identical
-        const baseDur = 3.6 + (slot.slotIndex % 3) * 0.3
-        const spacing = (baseDur / 3).toFixed(2)
+        // Sweep: bright wave segment travelling slot → hub (active only).
+        // Long segment (≈ half the beam length) so it reads as a "wave",
+        // not a tiny dot. Cycle ~1.4 s, three staggered waves keep the
+        // beam always animated in one direction.
+        const L         = Math.hypot(sx - hx, sy - hy)
+        const SWEEP_LEN = Math.max(80, L * 0.45)
+        const sweepDur  = 1.4
+        const sweepN    = 3
+        const dashArr   = `${SWEEP_LEN} ${L * 2}`
 
         return (
           <g key={slot.id}>
-            {!isActive && (
-              <line
-                x1={hx} y1={hy} x2={sx} y2={sy}
-                className={`conn-line-base${isConnected ? ' conn-line-base--connected' : ''}`}
-              />
-            )}
+            {/* Outer bloomed halo (wide, soft cyan) */}
+            <line
+              x1={hx} y1={hy} x2={sx} y2={sy}
+              className={`beam-halo${stateSuffix && ' beam-halo' + stateSuffix}`}
+              filter="url(#beam-bloom)"
+            />
+            {/* Bright thin core (white neon interior of the energy beam) */}
+            <line
+              x1={hx} y1={hy} x2={sx} y2={sy}
+              className={`beam-core${stateSuffix && ' beam-core' + stateSuffix}`}
+            />
 
-            {isActive && (
-              <>
-                <line x1={hx} y1={hy} x2={sx} y2={sy} className="conn-line-active" />
-                {/* 3 evenly-spaced packets, staggered via negative begin */}
-                {[0, 1, 2].map(i => (
-                  <circle key={i} r="0.55" fill="rgba(0,200,200,0.92)" filter="url(#pkt-glow)">
-                    <animateMotion
-                      dur={`${baseDur}s`}
-                      repeatCount="indefinite"
-                      path={packetPath}
-                      begin={`${-(i * spacing)}s`}
-                      calcMode="spline"
-                      keyTimes="0;1"
-                      keySplines="0.4 0 0.6 1"
-                    />
-                  </circle>
-                ))}
-              </>
-            )}
+            {/* Wave sweeps (slot → hub) — active state only. Three staggered
+                bright segments travel the beam, giving a clear directional
+                flow without strobing the whole line. */}
+            {isActive && Array.from({ length: sweepN }).map((_, i) => (
+              <line
+                key={`sw-${i}`}
+                x1={sx} y1={sy} x2={hx} y2={hy}
+                className="beam-sweep beam-sweep--active"
+                strokeDasharray={dashArr}
+              >
+                <animate
+                  attributeName="stroke-dashoffset"
+                  from="0"
+                  to={-(L + SWEEP_LEN)}
+                  dur={`${sweepDur}s`}
+                  begin={`${-((i * sweepDur) / sweepN).toFixed(2)}s`}
+                  repeatCount="indefinite"
+                  calcMode="spline"
+                  keyTimes="0;1"
+                  keySplines="0.4 0 0.6 1"
+                />
+              </line>
+            ))}
+
+            {/* Endpoint "star" at the slot side. Active = pulse at each sweep
+                emission moment (start of cycle). */}
+            <circle
+              cx={sx} cy={sy}
+              r={isActive ? 10 : isConnected ? 7 : 6}
+              style={{ '--cycle': `${sweepDur}s` }}
+              className={`conn-endpoint${stateSuffix && ' conn-endpoint' + stateSuffix}`}
+            />
           </g>
         )
       })}

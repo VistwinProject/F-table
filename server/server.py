@@ -34,6 +34,11 @@ slot_state: list[dict] = [_empty_slot() for _ in range(MAX_SLOTS)]
 # reader_name → assigned slot_index
 reader_to_slot: dict[str, int] = {}
 
+# Session state — toggled by operator tablet via session-start / session-end
+# control messages. New clients receive the current state on connect so a
+# mid-session reload doesn't drop back to the welcome screen.
+session_state: str = 'welcome'  # 'welcome' | 'live'
+
 # ── WebSocket clients ─────────────────────────────────────────────────────────
 clients: set = set()
 
@@ -48,10 +53,11 @@ async def broadcast(payload: dict):
     clients.difference_update(dead)
 
 async def ws_handler(websocket):
+    global session_state
     clients.add(websocket)
     print('[WS]   Client connected')
     try:
-        # Send full current state to new client
+        # Send full current state to new client (slot states + current session)
         for i, state in enumerate(slot_state):
             if state['connected']:
                 await websocket.send(json.dumps({
@@ -61,7 +67,22 @@ async def ws_handler(websocket):
                 }))
             if state['current_card']:
                 await websocket.send(json.dumps(state['current_card']))
-        await websocket.wait_closed()
+        if session_state == 'live':
+            await websocket.send(json.dumps({'type': 'session-start'}))
+
+        # Listen for incoming control messages (operator tablet sends these).
+        # Only `session-start` / `session-end` are accepted from clients; NFC
+        # events are server-originated only.
+        async for raw in websocket:
+            try:
+                msg = json.loads(raw)
+            except Exception:
+                continue
+            t = msg.get('type')
+            if t in ('session-start', 'session-end'):
+                session_state = 'live' if t == 'session-start' else 'welcome'
+                print(f'[WS]   Control msg: {t} → session_state={session_state}')
+                await broadcast({'type': t})
     finally:
         clients.discard(websocket)
         print('[WS]   Client disconnected')

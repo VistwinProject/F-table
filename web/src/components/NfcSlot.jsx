@@ -1,8 +1,4 @@
-export default function NfcSlot({ slot, angle, radius = 38, connected, active, focused, onClick }) {
-  const rad = (angle * Math.PI) / 180
-  const x   = 50 + radius * Math.cos(rad)
-  const y   = 50 + radius * Math.sin(rad)
-
+export default function NfcSlot({ slot, x, y, connected, active, focused, onClick }) {
   const cls = [
     'nfc-slot',
     connected && 'connected',

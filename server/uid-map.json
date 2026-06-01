@@ -6,10 +6,10 @@
     "osc": "/nfc/door"
   },
   "4F54E53C": {
-    "id": "air",
-    "label": "智能家電01",
-    "description": "智能家電01 互動展示，透過 NFC 感應啟動 3D 模型。",
-    "osc": "/nfc/air",
+    "id": "hrv",
+    "label": "新風機",
+    "description": "全熱交換機（HRV）— 顯示用電、累積與預測性維護排程。",
+    "osc": "/nfc/hrv",
     "model": "/models/%E6%B0%B4%E5%86%B7%E6%89%87%E4%B9%BE%E6%B7%A8.ply"
   }
 }
