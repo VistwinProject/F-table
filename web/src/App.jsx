@@ -372,18 +372,21 @@ function ConnectionLines({ slots, slotStates }) {
         const sx = sp.x  - SLOT_CLEAR_PX * ux
         const sy = sp.y  - SLOT_CLEAR_PX * uy
 
-        const state       = slotStates[slot.slotIndex]
-        const isActive    = state.activeCard !== null
-        const isConnected = state.connected
-        const stateSuffix = isActive ? '--active' : isConnected ? '--connected' : ''
+        const state    = slotStates[slot.slotIndex]
+        const isActive = state.activeCard !== null
+        // Only two beam looks now: active (full neon + sweep) vs everything
+        // else (a simple faint line). "Reader connected but no tag" is shown
+        // by the NODE RING going solid (NfcSlot), not by the beam — so a
+        // connected-but-idle slot keeps the same simple line as a no-reader slot.
+        const stateSuffix = isActive ? '--active' : ''
 
         // Sweep: bright wave segment travelling slot → hub (active only).
-        // Long segment (≈ half the beam length) so it reads as a "wave",
-        // not a tiny dot. Cycle ~1.4 s, three staggered waves keep the
-        // beam always animated in one direction.
+        // Long segment (≈ half the beam length) so it reads as a "wave".
+        // Slower, sparser pulses — one wave at a time, ~3 s cycle, so the
+        // flow feels calm/deliberate rather than a rapid strobe.
         const L         = Math.hypot(sx - hx, sy - hy)
-        const SWEEP_LEN = Math.max(80, L * 0.45)
-        const sweepDur  = 1.4
+        const SWEEP_LEN = Math.max(50, L * 0.3)
+        const sweepDur  = 2.2
         const sweepN    = 3
         const dashArr   = `${SWEEP_LEN} ${L * 2}`
 
@@ -425,14 +428,8 @@ function ConnectionLines({ slots, slotStates }) {
               </line>
             ))}
 
-            {/* Endpoint "star" at the slot side. Active = pulse at each sweep
-                emission moment (start of cycle). */}
-            <circle
-              cx={sx} cy={sy}
-              r={isActive ? 10 : isConnected ? 7 : 6}
-              style={{ '--cycle': `${sweepDur}s` }}
-              className={`conn-endpoint${stateSuffix && ' conn-endpoint' + stateSuffix}`}
-            />
+            {/* (Endpoint dot removed — beams connect directly with no solid
+                circle at the slot end, for all states.) */}
           </g>
         )
       })}

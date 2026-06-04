@@ -746,10 +746,9 @@ html, body {
   stroke-linecap: round;
   stroke: rgba(0, 220, 220, 0.35);
   stroke-width: 6;
-}
-.beam-halo--connected {
-  stroke: rgba(80, 240, 240, 0.68);
-  stroke-width: 10;
+  /* "Power-up" transition: when a tag lands the beam swells/brightens over
+     ~0.45s instead of snapping on. ease-out so it kicks in fast then settles. */
+  transition: stroke-width 0.45s var(--ease), stroke 0.45s var(--ease);
 }
 .beam-halo--active {
   stroke: rgba(120, 240, 240, 0.88);
@@ -761,10 +760,7 @@ html, body {
   stroke-linecap: round;
   stroke: rgba(220, 252, 252, 0.78);
   stroke-width: 1.6;
-}
-.beam-core--connected {
-  stroke: rgba(240, 255, 255, 0.95);
-  stroke-width: 2.2;
+  transition: stroke-width 0.45s var(--ease), stroke 0.45s var(--ease);
 }
 /* Active core stays modest in width — the cyan halo should dominate the
    colour read of the beam; the white core is just the bright inner thread.
@@ -790,63 +786,17 @@ html, body {
     drop-shadow(0 0 5px rgba(220, 255, 255, 1))
     drop-shadow(0 0 14px rgba(120, 240, 240, 0.95))
     drop-shadow(0 0 30px rgba(0, 220, 220, 0.55));
+  /* Comet fades in during the power-up so it joins gradually, not popping */
+  animation: beam-sweep-in 0.45s ease-out both;
 }
 
-/* Endpoint = "star" at each slot. Multi-layer drop-shadow halos give that
-   GIF Phase-B node-burst look (bright white center + concentric cyan glow).
-   Idle = static visible star. Connected = brighter. Active = pulsing star burst. */
-.conn-endpoint {
-  fill: rgba(220, 252, 252, 0.92);
-  filter:
-    drop-shadow(0 0 3px rgba(190, 245, 245, 1))
-    drop-shadow(0 0 9px rgba(0, 220, 220, 0.75))
-    drop-shadow(0 0 20px rgba(0, 200, 200, 0.40));
-}
-.conn-endpoint--connected {
-  fill: rgba(240, 255, 255, 1);
-  filter:
-    drop-shadow(0 0 4px rgba(210, 252, 252, 1))
-    drop-shadow(0 0 12px rgba(80, 230, 230, 0.85))
-    drop-shadow(0 0 26px rgba(0, 210, 210, 0.55));
-}
-.conn-endpoint--active {
-  fill: rgba(255, 255, 255, 1);
-  filter:
-    drop-shadow(0 0 5px rgba(230, 255, 255, 1))
-    drop-shadow(0 0 14px rgba(140, 245, 245, 1))
-    drop-shadow(0 0 30px rgba(0, 220, 220, 0.85))
-    drop-shadow(0 0 50px rgba(0, 200, 200, 0.50));
-  /* Synced to sweep emission cycle (see --cycle inline style on the circle,
-     defaults to the sweep duration). Burst once per cycle when a new sweep
-     wave is emitted from the slot. */
-  animation: endpoint-flash-active var(--cycle, 1.4s) ease-out infinite;
+@keyframes beam-sweep-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
 
-/* Active endpoint: brief burst at the start of each sweep cycle (emission
-   moment when a new wave leaves the slot), then settles back to bright. */
-@keyframes endpoint-flash-active {
-  /* 0% — burst: huge, bright white, layered halo */
-  0% {
-    fill-opacity: 1;
-    r: 15;
-    filter:
-      drop-shadow(0 0 8px rgba(255, 255, 255, 1))
-      drop-shadow(0 0 22px rgba(190, 250, 250, 1))
-      drop-shadow(0 0 46px rgba(0, 230, 230, 0.95))
-      drop-shadow(0 0 80px rgba(0, 200, 200, 0.55));
-  }
-  /* 22% & 100% — sustain (matches the base .conn-endpoint--active style) */
-  22%, 100% {
-    fill-opacity: 0.95;
-    r: 10;
-    filter:
-      drop-shadow(0 0 5px rgba(230, 255, 255, 1))
-      drop-shadow(0 0 14px rgba(140, 245, 245, 1))
-      drop-shadow(0 0 30px rgba(0, 220, 220, 0.85))
-      drop-shadow(0 0 50px rgba(0, 200, 200, 0.50));
-  }
-}
-
+/* (Slot-end endpoint dot removed entirely — beams connect with no solid
+   circle at the slot side, for all states.) */
 
 /* Endpoint dot */
 .conn-dot { transition: fill 0.45s, r 0.45s; }
@@ -1378,7 +1328,7 @@ html, body {
 .idle-card__hint {
   font-family: var(--font-cjk);
   font-size: 15px;
-  color: var(--c-text-dim);
+  color: var(--c-legible-2);
   letter-spacing: 0.04em;
   line-height: 1.7;
   max-width: 320px;
@@ -1411,22 +1361,24 @@ html, body {
   font-size: 15px;
   letter-spacing: 0.04em;
 }
-.idle-foot__key { color: var(--c-text-dim); }
-.idle-foot__val { color: var(--c-text-mute); font-family: var(--font-hud); font-size: 14px; }
+.idle-foot__key { color: var(--c-legible-2); }
+.idle-foot__val { color: #e2e8ea; font-family: var(--font-hud); font-size: 14px; font-weight: 500; }
 .idle-foot__val.is-ok  { color: var(--green); }
 .idle-foot__val.is-err { color: var(--red); }
 
 .device-dash__title {
   font-family: var(--font-cjk);
-  font-size: 24px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  color: var(--c-text);
+  font-size: 25px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: #f2f6f8;
   margin: 0 0 4px;
   display: flex;
   align-items: baseline;
   gap: 4px;
-  text-shadow: 0 0 14px rgba(0, 200, 200, 0.25);
+  /* Tighter, dimmer glow — a wide blur softens the edges and hurts legibility
+     for presbyopic viewers; keep just a faint halo for the tech look. */
+  text-shadow: 0 0 6px rgba(0, 200, 200, 0.18);
 }
 .device-dash__title-brace {
   color: var(--c-accent);
@@ -1436,8 +1388,8 @@ html, body {
 
 /* ── Card (re-used by every dashboard section) ── */
 .device-card {
-  background: rgba(255, 255, 255, 0.028);
-  border: 1px solid rgba(255, 255, 255, 0.10);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.16);
   border-radius: 14px;
   padding: 17px 19px;
   display: flex;
@@ -1452,11 +1404,18 @@ html, body {
   gap: 10px;
 }
 
+/* ── Legibility overrides (info panel only) ───────────────────────────────────
+   Showcase audience skews older / presbyopic, and projection washes out low
+   contrast. Within the dashboard we brighten the muted secondary text and add
+   weight so strokes hold up. Bright "legible secondary" tone used throughout. */
+.device-dash { --c-legible-2: #cdd6da; }   /* brighter than --c-text-dim #8a8f93 */
+
 .device-card__label {
   font-family: var(--font-cjk);
   font-size: 16px;
+  font-weight: 600;
   letter-spacing: 0.04em;
-  color: var(--c-text-dim);
+  color: var(--c-legible-2);
 }
 
 /* ── Big usage stat (今日 / 累積) ── */
@@ -1478,7 +1437,8 @@ html, body {
 .usage-stat__unit {
   font-family: var(--font-hud);
   font-size: 18px;
-  color: var(--c-text-mute);
+  font-weight: 500;
+  color: #d4dbde;
   letter-spacing: 0.04em;
 }
 .usage-stat__delta {
@@ -1496,10 +1456,12 @@ html, body {
 .usage-stat__delta-label {
   font-family: var(--font-cjk);
   font-size: 15px;
-  color: var(--c-text-dim);
+  font-weight: 500;
+  color: var(--c-legible-2);
   letter-spacing: 0.04em;
 }
-.usage-stat__delta.is-good .usage-stat__delta-pct { color: var(--green); }
+/* Brighter green for "good" delta — the token green reads dim when small */
+.usage-stat__delta.is-good .usage-stat__delta-pct { color: #5fe0c0; }
 .usage-stat__delta.is-bad  .usage-stat__delta-pct { color: var(--amber); }
 
 /* ── Range tabs (日/週/月/年) ── */
@@ -1538,7 +1500,7 @@ html, body {
   top: -2px; left: 0;
   font-family: var(--font-hud);
   font-size: 13px;
-  color: var(--c-text-dim);
+  color: var(--c-legible-2);
   letter-spacing: 0.04em;
 }
 .trend-chart__yaxis {
@@ -1547,7 +1509,7 @@ html, body {
   justify-content: space-between;
   font-family: var(--font-hud);
   font-size: 13px;
-  color: var(--c-text-dim);
+  color: var(--c-legible-2);
   padding: 14px 0 0;
   text-align: right;
   padding-right: 8px;
@@ -1581,7 +1543,7 @@ html, body {
   margin-top: 6px;
   font-family: var(--font-hud);
   font-size: 13px;
-  color: var(--c-text-dim);
+  color: var(--c-legible-2);
   font-variant-numeric: tabular-nums;
 }
 
@@ -1600,7 +1562,8 @@ html, body {
 .cumulative__target {
   font-family: var(--font-cjk);
   font-size: 15px;
-  color: var(--c-text-dim);
+  font-weight: 500;
+  color: var(--c-legible-2);
   white-space: nowrap;
   padding-bottom: 6px;
 }
@@ -1624,7 +1587,7 @@ html, body {
   justify-content: space-between;
   font-family: var(--font-hud);
   font-size: 14px;
-  color: var(--c-text-dim);
+  color: var(--c-legible-2);
   letter-spacing: 0.04em;
 }
 .cumulative__pct {
@@ -1652,23 +1615,25 @@ html, body {
   border-top: 1px solid rgba(255, 255, 255, 0.05);
 }
 .maint-row--head {
-  color: var(--c-text-dim);
+  color: var(--c-legible-2);
   font-size: 13px;
+  font-weight: 500;
   letter-spacing: 0.04em;
   padding-bottom: 8px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.14);
 }
 .maint-row__icon {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--c-text-mute);
+  color: var(--c-legible-2);
 }
 .maint-row__name {
   color: var(--c-text);
+  font-weight: 500;
 }
 .maint-row__date {
-  color: var(--c-text-mute);
+  color: var(--c-legible-2);
   font-family: var(--font-hud);
   font-variant-numeric: tabular-nums;
   letter-spacing: 0.02em;
@@ -1679,8 +1644,8 @@ html, body {
   font-weight: 600;
   text-align: right;
 }
-.maint-row__status--ok   { color: var(--green); }
-.maint-row__status--warn { color: var(--amber); }
+.maint-row__status--ok   { color: #5fe0c0; }
+.maint-row__status--warn { color: #ffb22e; }
 
 /* ── Welcome screen overlay ──────────────────────────────────────────────────── */
 .welcome-screen {
