@@ -297,9 +297,9 @@ html, body {
 
 /* ── Info Panel — wireframe HUD, rounded rect ──────────────────────────────── */
 .info-panel {
-  width: clamp(320px, 26vw, 420px);
-  min-width: 320px;
-  max-width: 420px;
+  width: clamp(420px, 32vw, 540px);
+  min-width: 420px;
+  max-width: 540px;
   flex-shrink: 0;
   height: 100%;
   background: rgba(255, 255, 255, 0.018);
@@ -1314,10 +1314,10 @@ html, body {
   flex: 1;
   overflow-y: auto;
   overflow-x: hidden;
-  padding: 20px 22px 22px;
+  padding: 24px 28px 28px;
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 16px;
   scrollbar-width: none;
   animation: dash-fade-in 0.45s var(--ease);
 }
@@ -1370,18 +1370,18 @@ html, body {
 
 .idle-card__title {
   font-family: var(--font-cjk);
-  font-size: 16px;
+  font-size: 20px;
   font-weight: 600;
   color: var(--c-text);
   letter-spacing: 0.06em;
 }
 .idle-card__hint {
   font-family: var(--font-cjk);
-  font-size: 12px;
+  font-size: 15px;
   color: var(--c-text-dim);
   letter-spacing: 0.04em;
   line-height: 1.7;
-  max-width: 260px;
+  max-width: 320px;
 }
 .idle-card__hint code {
   font-family: var(--font-hud);
@@ -1408,17 +1408,17 @@ html, body {
   display: flex;
   justify-content: space-between;
   font-family: var(--font-cjk);
-  font-size: 12px;
+  font-size: 15px;
   letter-spacing: 0.04em;
 }
 .idle-foot__key { color: var(--c-text-dim); }
-.idle-foot__val { color: var(--c-text-mute); font-family: var(--font-hud); font-size: 11.5px; }
+.idle-foot__val { color: var(--c-text-mute); font-family: var(--font-hud); font-size: 14px; }
 .idle-foot__val.is-ok  { color: var(--green); }
 .idle-foot__val.is-err { color: var(--red); }
 
 .device-dash__title {
   font-family: var(--font-cjk);
-  font-size: 19px;
+  font-size: 24px;
   font-weight: 700;
   letter-spacing: 0.06em;
   color: var(--c-text);
@@ -1439,10 +1439,10 @@ html, body {
   background: rgba(255, 255, 255, 0.028);
   border: 1px solid rgba(255, 255, 255, 0.10);
   border-radius: 14px;
-  padding: 14px 16px;
+  padding: 17px 19px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
 }
 
 .device-card__head {
@@ -1454,7 +1454,7 @@ html, body {
 
 .device-card__label {
   font-family: var(--font-cjk);
-  font-size: 13px;
+  font-size: 16px;
   letter-spacing: 0.04em;
   color: var(--c-text-dim);
 }
@@ -1468,7 +1468,7 @@ html, body {
 }
 .usage-stat__value {
   font-family: var(--font-hud);
-  font-size: 38px;
+  font-size: 48px;
   font-weight: 600;
   letter-spacing: 0.01em;
   color: var(--c-text);
@@ -1477,7 +1477,7 @@ html, body {
 }
 .usage-stat__unit {
   font-family: var(--font-hud);
-  font-size: 14px;
+  font-size: 18px;
   color: var(--c-text-mute);
   letter-spacing: 0.04em;
 }
@@ -1490,12 +1490,12 @@ html, body {
 }
 .usage-stat__delta-pct {
   font-family: var(--font-hud);
-  font-size: 15px;
+  font-size: 19px;
   font-weight: 600;
 }
 .usage-stat__delta-label {
   font-family: var(--font-cjk);
-  font-size: 12px;
+  font-size: 15px;
   color: var(--c-text-dim);
   letter-spacing: 0.04em;
 }
@@ -1515,8 +1515,8 @@ html, body {
   display: inline-block;
   color: var(--c-text-dim);
   font-family: var(--font-cjk);
-  font-size: 13px;
-  padding: 3px 11px;
+  font-size: 16px;
+  padding: 4px 14px;
   border-radius: 6px;
 }
 .range-tab.active {
@@ -1529,15 +1529,15 @@ html, body {
 .trend-chart {
   position: relative;
   display: grid;
-  grid-template-columns: 28px 1fr;
-  height: 132px;
-  margin-top: 4px;
+  grid-template-columns: 36px 1fr;
+  height: 168px;
+  margin-top: 6px;
 }
 .trend-chart__unit {
   position: absolute;
   top: -2px; left: 0;
   font-family: var(--font-hud);
-  font-size: 11px;
+  font-size: 13px;
   color: var(--c-text-dim);
   letter-spacing: 0.04em;
 }
@@ -1546,11 +1546,11 @@ html, body {
   flex-direction: column;
   justify-content: space-between;
   font-family: var(--font-hud);
-  font-size: 11px;
+  font-size: 13px;
   color: var(--c-text-dim);
-  padding: 12px 0 0;
+  padding: 14px 0 0;
   text-align: right;
-  padding-right: 6px;
+  padding-right: 8px;
   font-variant-numeric: tabular-nums;
 }
 .trend-chart__plot {
@@ -1577,10 +1577,10 @@ html, body {
 .trend-chart__xaxis {
   display: flex;
   justify-content: space-between;
-  padding-left: 32px;
-  margin-top: 4px;
+  padding-left: 40px;
+  margin-top: 6px;
   font-family: var(--font-hud);
-  font-size: 11px;
+  font-size: 13px;
   color: var(--c-text-dim);
   font-variant-numeric: tabular-nums;
 }
@@ -1599,15 +1599,15 @@ html, body {
 }
 .cumulative__target {
   font-family: var(--font-cjk);
-  font-size: 12px;
+  font-size: 15px;
   color: var(--c-text-dim);
   white-space: nowrap;
-  padding-bottom: 4px;
+  padding-bottom: 6px;
 }
 .cumulative__bar {
   position: relative;
   width: 100%;
-  height: 6px;
+  height: 8px;
   background: rgba(255, 255, 255, 0.06);
   border-radius: 3px;
   overflow: hidden;
@@ -1623,7 +1623,7 @@ html, body {
   display: flex;
   justify-content: space-between;
   font-family: var(--font-hud);
-  font-size: 11px;
+  font-size: 14px;
   color: var(--c-text-dim);
   letter-spacing: 0.04em;
 }
@@ -1641,21 +1641,21 @@ html, body {
 }
 .maint-row {
   display: grid;
-  grid-template-columns: 18px 1fr 78px 78px 60px;
+  grid-template-columns: 22px 1fr 94px 94px 72px;
   align-items: center;
-  gap: 6px;
-  padding: 7px 0;
+  gap: 8px;
+  padding: 9px 0;
   font-family: var(--font-cjk);
-  font-size: 12px;
+  font-size: 15px;
 }
 .maint-row + .maint-row {
   border-top: 1px solid rgba(255, 255, 255, 0.05);
 }
 .maint-row--head {
   color: var(--c-text-dim);
-  font-size: 11px;
+  font-size: 13px;
   letter-spacing: 0.04em;
-  padding-bottom: 6px;
+  padding-bottom: 8px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 .maint-row__icon {
@@ -1672,10 +1672,10 @@ html, body {
   font-family: var(--font-hud);
   font-variant-numeric: tabular-nums;
   letter-spacing: 0.02em;
-  font-size: 11.5px;
+  font-size: 14px;
 }
 .maint-row__status {
-  font-size: 12px;
+  font-size: 15px;
   font-weight: 600;
   text-align: right;
 }

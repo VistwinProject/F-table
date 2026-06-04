@@ -5,11 +5,40 @@
     "description": "偵測入口狀態、開啟紀錄與環境安全資訊。",
     "osc": "/nfc/door"
   },
-  "4F54E53C": {
+  "B7F6401E": {
+    "id": "ac",
+    "label": "冷氣",
+    "description": "智慧空調 — 顯示設定溫度、功率與預測性維護排程。",
+    "osc": "/nfc/ac"
+  },
+  "FE53411E": {
     "id": "hrv",
     "label": "新風機",
     "description": "全熱交換機（HRV）— 顯示用電、累積與預測性維護排程。",
-    "osc": "/nfc/hrv",
-    "model": "/models/%E6%B0%B4%E5%86%B7%E6%89%87%E4%B9%BE%E6%B7%A8.ply"
+    "osc": "/nfc/hrv"
+  },
+  "B00C411E": {
+    "id": "light",
+    "label": "燈",
+    "description": "智慧照明 — 顯示亮度、色溫與運作狀態。",
+    "osc": "/nfc/light"
+  },
+  "EEA1E43C": {
+    "id": "socket",
+    "label": "插座",
+    "description": "智慧插座 — 顯示即時負載、今日用電。",
+    "osc": "/nfc/socket"
+  },
+  "FB9AE53C": {
+    "id": "curtain",
+    "label": "窗簾",
+    "description": "電動窗簾 — 顯示開合位置與模式。",
+    "osc": "/nfc/curtain"
+  },
+  "4F54E53C": {
+    "id": "sound",
+    "label": "音響",
+    "description": "音響系統 — 顯示音量、來源與運作狀態。",
+    "osc": "/nfc/sound"
   }
 }

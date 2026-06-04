@@ -341,12 +341,16 @@ function ConnectionLines({ slots, slotStates }) {
       preserveAspectRatio="none"
     >
       <defs>
-        {/* Soft cyan bloom — the halo around each beam */}
-        <filter id="beam-bloom" x="-50%" y="-50%" width="200%" height="200%">
+        {/* Soft cyan bloom — the halo around each beam.
+            filterUnits="userSpaceOnUse" with an explicit region covering the
+            whole SVG is REQUIRED: the default objectBoundingBox region
+            collapses to zero for a perfectly horizontal or vertical <line>
+            (bbox height/width = 0), which would make the halo vanish for the
+            cardinal-direction beams (NFC 01 @180°, 05 @90°, 09 @0°). */}
+        <filter id="beam-bloom" filterUnits="userSpaceOnUse" x="0" y="0" width={W} height={H}>
           <feGaussianBlur stdDeviation="4" />
         </filter>
-        {/* Stronger bloom — for the traveling pulse and active beams */}
-        <filter id="pulse-bloom" x="-100%" y="-100%" width="300%" height="300%">
+        <filter id="pulse-bloom" filterUnits="userSpaceOnUse" x="0" y="0" width={W} height={H}>
           <feGaussianBlur stdDeviation="6" />
         </filter>
       </defs>
