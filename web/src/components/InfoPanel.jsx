@@ -1,3 +1,5 @@
+import { useState, useEffect, useRef } from 'react'
+
 /* ── Mock appliance datasets ───────────────────────────────────────────────────
    Keyed by the `id` from uid-map.json. Each appliance has its own title, today
    stat, trend, monthly cumulative, and maintenance schedule. The page will
@@ -193,7 +195,6 @@ function MaintIcon({ kind }) {
 function IdleView({ wsStatus }) {
   const isOnline = wsStatus === 'connected'
   return (
-    <div className="info-panel">
       <div className="device-dash device-dash--idle">
         <h2 className="device-dash__title">
           <span className="device-dash__title-brace">[</span>
@@ -222,14 +223,12 @@ function IdleView({ wsStatus }) {
           </div>
         </div>
       </div>
-    </div>
   )
 }
 
 /* ── Unknown card ─────────────────────────────────────────────────────────── */
 function UnknownView({ uid }) {
   return (
-    <div className="info-panel">
       <div className="device-dash device-dash--idle">
         <h2 className="device-dash__title">
           <span className="device-dash__title-brace">[</span>
@@ -241,7 +240,6 @@ function UnknownView({ uid }) {
           <div className="idle-card__hint">UID: <code>{uid}</code></div>
         </div>
       </div>
-    </div>
   )
 }
 
@@ -257,8 +255,7 @@ function DashboardView({ data }) {
   const monthPct  = Math.round((data.month.value / data.month.target) * 100)
 
   return (
-    <div className="info-panel">
-      <div className="device-dash" key={data.name /* re-mount on appliance change → fresh transitions */}>
+      <div className="device-dash">
 
         <h2 className="device-dash__title">
           <span className="device-dash__title-brace">[</span>
@@ -360,23 +357,66 @@ function DashboardView({ data }) {
         </section>
 
       </div>
-    </div>
   )
+}
+
+/* ── Cross-fade swapper ─────────────────────────────────────────────────────────
+   Smooths appliance/state changes (e.g. the 5s auto-rotation): when `viewKey`
+   changes, the current content fades out, then the new content swaps in and
+   fades in — instead of a hard cut. Content updates within the SAME viewKey
+   (live data on the same appliance) pass through without a fade. */
+const FADE_MS = 550  // slide-out duration; must match .panel-fade CSS transition
+function FadeSwap({ viewKey, children }) {
+  const [render, setRender] = useState(children)
+  const [phase, setPhase]   = useState('in')   // 'in' (centred) | 'out' (slide left) | 'enter' (parked right)
+  const lastKey = useRef(viewKey)
+  const timer   = useRef(null)
+  const timer2  = useRef(null)
+
+  useEffect(() => {
+    if (viewKey === lastKey.current) {
+      setRender(children)          // same view → live-update content, no slide
+      return
+    }
+    setPhase('out')                // view changed → current slides out to the left
+    clearTimeout(timer.current)
+    timer.current = setTimeout(() => {
+      lastKey.current = viewKey
+      setRender(children)          // swap content
+      setPhase('enter')            // park new content off-screen right (no transition)
+      clearTimeout(timer2.current)
+      // small delay so the 'enter' position paints before flipping to 'in',
+      // otherwise the browser batches both and skips the slide
+      timer2.current = setTimeout(() => setPhase('in'), 30)  // slide in from right
+    }, FADE_MS)
+  }, [viewKey, children])
+
+  useEffect(() => () => { clearTimeout(timer.current); clearTimeout(timer2.current) }, [])
+
+  return <div className={`panel-fade panel-fade--${phase}`}>{render}</div>
 }
 
 /* ── InfoPanel root ────────────────────────────────────────────────────────── */
 export default function InfoPanel({ wsStatus, focusedState }) {
   const card = focusedState?.activeCard
 
-  // No card on focused slot → idle/wait state
-  if (!card) return <IdleView wsStatus={wsStatus} />
+  let viewKey, body
+  if (!card) {
+    viewKey = `idle:${wsStatus === 'connected'}`
+    body = <IdleView wsStatus={wsStatus} />
+  } else if (!card.known) {
+    viewKey = `unknown:${card.uid}`
+    body = <UnknownView uid={card.uid} />
+  } else {
+    const id   = card.data.id
+    const data = APPLIANCES[id] || makeFallback(card.data.label || id)
+    viewKey = `dash:${id}`
+    body = <DashboardView data={data} />
+  }
 
-  // Card present but UID not registered → unknown state
-  if (!card.known) return <UnknownView uid={card.uid} />
-
-  // Known card → look up appliance dataset (fallback if id has no specific data)
-  const id   = card.data.id
-  const data = APPLIANCES[id] || makeFallback(card.data.label || id)
-
-  return <DashboardView data={data} />
+  return (
+    <div className="info-panel">
+      <FadeSwap viewKey={viewKey}>{body}</FadeSwap>
+    </div>
+  )
 }

@@ -1259,6 +1259,22 @@ html, body {
   pointer-events: none;
 }
 
+/* ── Slide swapper (smooth appliance / rotation transitions) ─────────────────
+   Old content slides out to the LEFT, new content slides in from the RIGHT.
+   --enter parks the incoming content off-screen right with NO transition, then
+   a class flip to --in animates it to centre. .info-panel has overflow:hidden
+   so the off-centre content is clipped cleanly. */
+.panel-fade {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  transition: opacity 550ms var(--ease), transform 550ms var(--ease);
+}
+.panel-fade--in    { opacity: 1; transform: translateX(0); }
+.panel-fade--out   { opacity: 0; transform: translateX(-10%); }
+.panel-fade--enter { opacity: 0; transform: translateX(10%); transition: none; }
+
 /* ── Device dashboard panel ──────────────────────────────────────────────────── */
 .device-dash {
   flex: 1;
@@ -1269,14 +1285,8 @@ html, body {
   flex-direction: column;
   gap: 16px;
   scrollbar-width: none;
-  animation: dash-fade-in 0.45s var(--ease);
 }
 .device-dash::-webkit-scrollbar { display: none; }
-
-@keyframes dash-fade-in {
-  from { opacity: 0; transform: translateY(4px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
 
 /* Idle variant — centers the prompt vertically */
 .device-dash--idle {

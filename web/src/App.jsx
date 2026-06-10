@@ -186,6 +186,39 @@ export default function App() {
     return () => { clearTimeout(timerRef.current); wsRef.current?.close() }
   }, [connect])
 
+  // ── InfoPanel focus rotation ────────────────────────────────────────────────
+  // A new tag jumps focus to the newest card immediately (handled in
+  // 'tag-present' above). After that, if more than one appliance is active, the
+  // panel auto-rotates through all active appliances every 5 s. The effect
+  // re-runs whenever slotStates or focusedIdx changes, so every new tap (and
+  // every rotation tick) restarts the 5 s timer — the newest card always gets a
+  // full interval before rotation continues. Also self-corrects focus to an
+  // active slot if the focused card was removed.
+  const ROTATE_MS = 8000  // 停留較久，老年觀眾看得從容
+  useEffect(() => {
+    const active = slotStates.flatMap((s, i) => (s.activeCard ? [i] : []))
+    if (active.length === 0) return
+
+    // Focus landed on a non-active slot (e.g. its card was removed) → snap to
+    // the most recent active one; the effect re-runs after this update.
+    if (focusedIdx === null || !slotStates[focusedIdx]?.activeCard) {
+      setFocusedIdx(active[active.length - 1])
+      return
+    }
+
+    if (active.length < 2) return  // single appliance → nothing to rotate
+
+    const id = setInterval(() => {
+      setFocusedIdx(prev => {
+        const order = slotStates.flatMap((s, i) => (s.activeCard ? [i] : []))
+        if (order.length === 0) return prev
+        const cur = order.indexOf(prev)
+        return order[(cur + 1) % order.length]
+      })
+    }, ROTATE_MS)
+    return () => clearInterval(id)
+  }, [slotStates, focusedIdx])
+
   const activeCount    = slotStates.filter(s => s.activeCard !== null).length
   const connectedCount = slotStates.filter(s => s.connected).length
   const focusedState   = focusedIdx !== null ? slotStates[focusedIdx] : null
