@@ -1,12 +1,12 @@
 /* Centre AI hub — adapted from the wall's f-wall/src/components/Hub.jsx.
    SVG-based: concentric rings + 72 radial tick marks (rotating slowly) +
    counter-rotating dashed arc + static inner ring + radial-gradient glow orb
-   + bright centre spot. Colour matches the SYNC-SPEC accent (#009393). */
+   + bright centre spot. Colour matches the ANLB brand accent (#247ed1). */
 
-const ACCENT    = '#009393'  // main teal
-const ACCENT2   = '#4dbaba'  // accent-2
-const ACTIVE    = '#00dcdc'  // bright cyan
-const HIGHLIGHT = '#dcffff'  // near-white core
+const ACCENT    = '#247ed1'  // ANLB 副色 1
+const ACCENT2   = '#5b9fe0'  // accent-2
+const ACTIVE    = '#67b3fe'  // ANLB 副色 2
+const HIGHLIGHT = '#e8f8ff'  // 光帶核心近白
 
 const R  = 116  // outer ring radius (viewBox units)
 const CX = 120

@@ -1,17 +1,17 @@
 /* ── Design Tokens ───────────────────────────────────────────────────────────── */
 :root {
   /* Teal accent — deep, refined */
-  --accent:       #009393;
-  --accent-2:     #4dbaba;
-  --accent-deep:  #006a6a;
-  --accent-dim:   rgba(0, 147, 147, 0.08);
-  --accent-glow:  rgba(0, 147, 147, 0.30);
-  --accent-ring:  rgba(0, 147, 147, 0.20);
+  --accent:       #247ed1;  /* ANLB 副色 1 */
+  --accent-2:     #5b9fe0;
+  --accent-deep:  #1a5aa0;
+  --accent-dim:   rgba(36, 126, 209, 0.10);
+  --accent-glow:  rgba(36, 126, 209, 0.32);
+  --accent-ring:  rgba(36, 126, 209, 0.22);
 
-  --green:  #4dbaba;
+  --green:  #5b9fe0;  /* 品牌圖面無綠色，狀態「正常」沿用藍系 */
   --red:    #f43f5e;
   --amber:  #f59e0b;
-  --blue:   #38bdf8;
+  --blue:   #67b3fe;  /* ANLB 副色 2 */
 
   --font-display: 'Space Grotesk', 'Chiron Hei HK', sans-serif;
   --font-cjk:     'Chiron Hei HK', 'Space Grotesk', sans-serif;
@@ -23,31 +23,31 @@
 
 [data-theme="dark"] {
   /* Background reads teal, but UI chrome stays neutral white/gray */
-  --c-bg:        #02090b;
-  --c-surface:   #0a1216;
-  --c-surface-2: #0d1620;
-  --c-surface-3: #111c25;
-  --c-border:    #1c2630;
-  --c-border-2:  #2a363f;
-  --c-text:      #e8ebee;
-  --c-text-dim:  #8a8f93;
-  --c-text-mute: #b5bab9;
+  --c-bg:        #0d2058;  /* ANLB 主色 */
+  --c-surface:   #0a1c4e;
+  --c-surface-2: #102459;
+  --c-surface-3: #152c66;
+  --c-border:    #23386f;
+  --c-border-2:  #2f4a86;
+  --c-text:      #dce9ff;
+  --c-text-dim:  #7d93c4;
+  --c-text-mute: #a8bce0;
   --c-accent:    var(--accent);
-  --frame-border: rgba(255, 255, 255, 0.10);
+  --frame-border: rgba(103, 179, 254, 0.16);
 }
 
 [data-theme="light"] {
-  --c-bg:        #eef5f1;
+  --c-bg:        #eef2fa;
   --c-surface:   #ffffff;
-  --c-surface-2: #f2f8f5;
-  --c-surface-3: #e6efe9;
-  --c-border:    #cfdfd5;
-  --c-border-2:  #b3cdc0;
-  --c-text:      #102018;
-  --c-text-dim:  #688078;
-  --c-text-mute: #4a6258;
-  --c-accent:    #0a8a5a;
-  --frame-border: rgba(20, 120, 80, 0.20);
+  --c-surface-2: #f3f6fc;
+  --c-surface-3: #e5ebf7;
+  --c-border:    #cdd8ea;
+  --c-border-2:  #b0c2de;
+  --c-text:      #0d1a3a;
+  --c-text-dim:  #6a7c9e;
+  --c-text-mute: #4a5c80;
+  --c-accent:    #1a5aa0;
+  --frame-border: rgba(26, 90, 160, 0.20);
 }
 
 /* ── Reset ───────────────────────────────────────────────────────────────────── */
@@ -56,7 +56,7 @@
 html, body {
   width: 100%; height: 100%;
   overflow: hidden;
-  background: #02090b;
+  background: #0d2058;
   color: var(--c-text);
   font-family: var(--font-display);
   font-size: 16px;
@@ -77,10 +77,10 @@ html, body {
   border: 1px solid var(--frame-border);
   border-radius: 28px;
   overflow: hidden;
-  background-color: #02090b;
+  background-color: #0d2058;
   background-image:
     /* Primary bloom — teal behind the hub */
-    radial-gradient(ellipse 78% 68% at 64% 30%, rgba(0, 147, 147, 0.36) 0%, rgba(0, 90, 92, 0.16) 45%, transparent 75%),
+    radial-gradient(ellipse 78% 68% at 64% 30%, rgba(36, 126, 209, 0.36) 0%, rgba(13, 32, 88, 0.16) 45%, transparent 75%),
     /* Secondary — teal behind the info panel */
     radial-gradient(ellipse 50% 70% at 12% 44%, rgba(0, 130, 132, 0.30) 0%, rgba(0, 72, 74, 0.10) 52%, transparent 76%),
     /* Bottom fade — depth */
@@ -99,7 +99,7 @@ html, body {
   display: flex;
   flex-direction: column;
   box-shadow:
-    inset 0 0 180px rgba(0, 90, 92, 0.16),
+    inset 0 0 180px rgba(13, 32, 88, 0.16),
     inset 0 1px 0 rgba(255, 255, 255, 0.05),
     0 0 90px rgba(0, 0, 0, 0.80);
 }
@@ -744,7 +744,7 @@ html, body {
 .beam-halo {
   fill: none;
   stroke-linecap: round;
-  stroke: rgba(0, 220, 220, 0.35);
+  stroke: rgba(103, 179, 254, 0.35);
   stroke-width: 6;
   /* "Power-up" transition: when a tag lands the beam swells/brightens over
      ~0.45s instead of snapping on. ease-out so it kicks in fast then settles. */
@@ -783,9 +783,9 @@ html, body {
   stroke: rgba(255, 255, 255, 0.98);
   stroke-width: 3.6;
   filter:
-    drop-shadow(0 0 5px rgba(220, 255, 255, 1))
+    drop-shadow(0 0 5px rgba(232, 248, 255, 1))
     drop-shadow(0 0 14px rgba(120, 240, 240, 0.95))
-    drop-shadow(0 0 30px rgba(0, 220, 220, 0.55));
+    drop-shadow(0 0 30px rgba(103, 179, 254, 0.55));
   /* Comet fades in during the power-up so it joins gradually, not popping */
   animation: beam-sweep-in 0.45s ease-out both;
 }
@@ -1494,7 +1494,7 @@ html, body {
 .range-tab.active {
   background: var(--accent-dim);
   color: var(--c-text);
-  box-shadow: 0 0 12px rgba(0, 147, 147, 0.30);
+  box-shadow: 0 0 12px rgba(36, 126, 209, 0.30);
 }
 
 /* ── Trend bar chart ── */
@@ -1672,8 +1672,8 @@ html, body {
   opacity: 1;
   transition: opacity 600ms cubic-bezier(0.5, 0, 0.5, 1);
   background:
-    radial-gradient(ellipse 60% 50% at 50% 50%, rgba(0, 80, 90, 0.30) 0%, rgba(0, 30, 35, 0.55) 50%, rgba(2, 9, 11, 0.92) 100%),
-    rgba(2, 9, 11, 0.96);
+    radial-gradient(ellipse 60% 50% at 50% 50%, rgba(0, 80, 90, 0.30) 0%, rgba(0, 30, 35, 0.55) 50%, rgba(4, 19, 69, 0.92) 100%),
+    rgba(4, 19, 69, 0.96);
   backdrop-filter: blur(2px);
   -webkit-backdrop-filter: blur(2px);
   animation: welcome-fade-in 600ms ease-out;
@@ -1717,8 +1717,8 @@ html, body {
   margin: 0;
   line-height: 1.05;
   text-shadow:
-    0 0 18px rgba(0, 220, 220, 0.85),
-    0 0 38px rgba(0, 220, 220, 0.55),
+    0 0 18px rgba(103, 179, 254, 0.85),
+    0 0 38px rgba(103, 179, 254, 0.55),
     0 0 80px rgba(0, 180, 200, 0.30);
   display: inline-flex;
   align-items: baseline;
@@ -1763,7 +1763,7 @@ html, body {
   border-radius: 50%;
   background: var(--c-accent);
   box-shadow:
-    0 0 20px rgba(0, 220, 220, 0.85),
+    0 0 20px rgba(103, 179, 254, 0.85),
     0 0 40px rgba(0, 200, 200, 0.45);
   animation: welcome-dot-pulse 2.4s ease-in-out infinite;
 }
@@ -1801,7 +1801,7 @@ html, body {
   height: 60%;
   transform: translateY(-50%);
   fill: none;
-  stroke: rgba(0, 220, 220, 0.45);
+  stroke: rgba(103, 179, 254, 0.45);
   stroke-width: 1;
   stroke-linecap: round;
   filter: drop-shadow(0 0 4px rgba(0, 200, 200, 0.45));
