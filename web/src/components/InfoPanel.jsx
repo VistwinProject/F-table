@@ -7,9 +7,9 @@ import { useState, useEffect, useRef } from 'react'
    panel shows an idle/wait state. */
 
 const APPLIANCES = {
-  /* 全熱交換機 (HRV) */
+  /* 新風機 / 全熱交換機 (HRV) */
   hrv: {
-    name:   '全熱交換機',
+    name:   '新風機',
     metric: '用電量',
     unit:   'kWh',
     today: { label: '今日用電量', value: 28.5, deltaPct: -12, deltaColor: 'good' },
@@ -26,28 +26,6 @@ const APPLIANCES = {
       { id: 'core',   icon: 'core',   name: '熱交換芯清潔', last: '2024/04/20', next: '2024/07/20', status: 'ok',   label: '正常' },
       { id: 'fan',    icon: 'fan',    name: '風扇檢查',     last: '2024/05/10', next: '2024/08/10', status: 'ok',   label: '正常' },
       { id: 'belt',   icon: 'belt',   name: '皮帶檢查',     last: '2024/03/15', next: '2024/09/15', status: 'ok',   label: '正常' },
-    ],
-  },
-
-  /* 大門 */
-  door: {
-    name:   '大門',
-    metric: '感應記錄',
-    unit:   '次',
-    today: { label: '今日感應次數', value: 24, deltaPct: 18, deltaColor: 'neutral' },
-    trend: {
-      '日': [0, 0, 0, 1, 2, 3, 4, 6, 4, 3, 2, 3, 4, 3, 2, 3, 4, 6, 5, 4, 3, 2, 1, 0],
-      '週': [38, 45, 52, 48, 44, 68, 55],
-      '月': [18, 24, 22, 30, 26, 32, 28, 22, 20, 26, 30, 24, 20, 24, 32, 36, 28, 24, 22, 20, 28, 30, 24, 22, 20, 26, 24, 30, 28, 22],
-      '年': [320, 345, 380, 410, 425, 460, 480, 470, 410, 380, 360, 392],
-    },
-    trendYMax: { '日': 8, '週': 80, '月': 40, '年': 500 },
-    month: { label: '本月累積感應', value: 392, target: 600 },
-    maint: [
-      { id: 'battery', icon: 'filter', name: '電池檢查',   last: '2024/04/10', next: '2024/07/10', status: 'ok',   label: '正常' },
-      { id: 'sensor',  icon: 'core',   name: '感應器校正', last: '2024/03/22', next: '2024/06/22', status: 'warn', label: '即將到期' },
-      { id: 'hinge',   icon: 'fan',    name: '鉸鏈潤滑',   last: '2024/02/15', next: '2024/08/15', status: 'ok',   label: '正常' },
-      { id: 'lock',    icon: 'belt',   name: '鎖具檢查',   last: '2024/05/01', next: '2024/11/01', status: 'ok',   label: '正常' },
     ],
   },
 
@@ -72,6 +50,71 @@ const APPLIANCES = {
     ],
   },
 
+  /* 除濕機 (Dehumidifier) */
+  dehum: {
+    name:   '除濕機',
+    metric: '用電量',
+    unit:   'kWh',
+    today: { label: '今日用電量', value: 12.4, deltaPct: -6, deltaColor: 'good' },
+    trend: {
+      '日': [0.7, 0.75, 0.8, 0.8, 0.75, 0.6, 0.45, 0.35, 0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 0.5, 0.45, 0.5, 0.6, 0.75, 0.9, 1.05, 1.1, 1, 0.85],
+      '週': [12, 13.5, 12.8, 14.6, 13.2, 11, 10.2],
+      '月': [11, 12.5, 12, 13.8, 13, 14.5, 13.6, 12, 10.8, 12.8, 13.4, 12.2, 11.4, 12.8, 14, 14.8, 13.2, 12.4, 11.2, 10.6, 13, 14.2, 12.6, 11.8, 10.8, 13.6, 12.8, 14.4, 13.2, 11.6],
+      '年': [268, 252, 296, 358, 412, 448, 462, 456, 402, 348, 310, 343],
+    },
+    trendYMax: { '日': 1.5, '週': 20, '月': 20, '年': 500 },
+    month: { label: '本月累積用電量', value: 342.8, target: 500 },
+    maint: [
+      { id: 'filter', icon: 'filter', name: '濾網清潔',   last: '2026/05/16', next: '2026/06/16', status: 'warn', label: '即將到期' },
+      { id: 'tank',   icon: 'core',   name: '水箱清潔',   last: '2026/04/28', next: '2026/07/28', status: 'ok',   label: '正常' },
+      { id: 'comp',   icon: 'fan',    name: '壓縮機檢查', last: '2026/03/12', next: '2026/09/12', status: 'ok',   label: '正常' },
+      { id: 'drain',  icon: 'belt',   name: '排水管檢查', last: '2026/04/05', next: '2026/10/05', status: 'ok',   label: '正常' },
+    ],
+  },
+
+  /* 空氣清淨機 (Air Purifier) */
+  purifier: {
+    name:   '空氣清淨機',
+    metric: '用電量',
+    unit:   'kWh',
+    today: { label: '今日用電量', value: 8.2, deltaPct: -4, deltaColor: 'good' },
+    trend: {
+      '日': [0.28, 0.28, 0.26, 0.26, 0.28, 0.32, 0.4, 0.48, 0.42, 0.34, 0.3, 0.3, 0.32, 0.3, 0.34, 0.4, 0.46, 0.52, 0.56, 0.54, 0.48, 0.42, 0.36, 0.3],
+      '週': [8.4, 8.8, 8.6, 9.2, 8.2, 7.4, 7],
+      '月': [7.6, 8.2, 8, 8.8, 8.4, 9, 8.6, 8, 7.4, 8.4, 8.8, 8.2, 7.8, 8.4, 9, 9.4, 8.6, 8.2, 7.6, 7.4, 8.6, 9, 8.4, 8, 7.6, 8.8, 8.4, 9.2, 8.6, 8],
+      '年': [212, 205, 238, 262, 274, 286, 292, 288, 268, 244, 226, 237],
+    },
+    trendYMax: { '日': 0.8, '週': 12, '月': 12, '年': 350 },
+    month: { label: '本月累積用電量', value: 236.5, target: 350 },
+    maint: [
+      { id: 'hepa',  icon: 'filter', name: 'HEPA 濾網更換', last: '2026/05/08', next: '2026/06/08', status: 'warn', label: '即將到期' },
+      { id: 'pre',   icon: 'core',   name: '前置濾網清潔',  last: '2026/05/22', next: '2026/07/22', status: 'ok',   label: '正常' },
+      { id: 'calib', icon: 'fan',    name: '感測器校正',    last: '2026/03/18', next: '2026/09/18', status: 'ok',   label: '正常' },
+      { id: 'duct',  icon: 'belt',   name: '風道清潔',      last: '2026/04/14', next: '2026/10/14', status: 'ok',   label: '正常' },
+    ],
+  },
+
+  /* 12合一感測器 (Sensor) */
+  sensor: {
+    name:   '12合一感測器',
+    metric: '偵測次數',
+    unit:   '次',
+    today: { label: '今日偵測', value: 156, deltaPct: 5, deltaColor: 'neutral' },
+    trend: {
+      '日': [3, 2, 2, 2, 3, 5, 8, 11, 9, 7, 6, 6, 7, 6, 7, 8, 10, 13, 14, 12, 10, 8, 5, 3],
+      '週': [148, 162, 155, 178, 166, 138, 130],
+      '月': [140, 152, 146, 168, 158, 176, 166, 148, 134, 156, 164, 150, 142, 156, 170, 180, 162, 152, 138, 132, 158, 172, 154, 146, 134, 166, 156, 176, 162, 144],
+      '年': [3980, 3860, 4120, 4280, 4420, 4560, 4620, 4580, 4380, 4180, 4020, 4280],
+    },
+    trendYMax: { '日': 16, '週': 220, '月': 220, '年': 6000 },
+    month: { label: '本月累積偵測', value: 4280, target: 6000 },
+    maint: [
+      { id: 'battery', icon: 'filter', name: '電池檢查', last: '2026/05/02', next: '2026/06/02', status: 'warn', label: '即將到期' },
+      { id: 'calib',   icon: 'core',   name: '感測校正', last: '2026/03/28', next: '2026/09/28', status: 'ok',   label: '正常' },
+      { id: 'comm',    icon: 'fan',    name: '通訊測試', last: '2026/04/18', next: '2026/10/18', status: 'ok',   label: '正常' },
+    ],
+  },
+
   /* 燈 (Light) */
   light: {
     name:   '燈',
@@ -92,9 +135,9 @@ const APPLIANCES = {
     ],
   },
 
-  /* 插座 (Socket) */
+  /* 智慧插座 (Socket) */
   socket: {
-    name:   '插座',
+    name:   '智慧插座',
     metric: '用電量',
     unit:   'kWh',
     today: { label: '今日用電量', value: 4.2, deltaPct: -5, deltaColor: 'good' },
@@ -132,23 +175,25 @@ const APPLIANCES = {
     ],
   },
 
-  /* 音響 (Sound) */
-  sound: {
-    name:   '音響',
-    metric: '播放時數',
+  /* 浴室暖風機 (Bathroom Fan) */
+  bathfan: {
+    name:   '浴室暖風機',
+    metric: '運轉時數',
     unit:   'hr',
-    today: { label: '今日播放', value: 3.4, deltaPct: 22, deltaColor: 'neutral' },
+    today: { label: '今日運轉', value: 2.6, deltaPct: 10, deltaColor: 'neutral' },
     trend: {
-      '日': [0, 0, 0, 0, 0, 0.2, 0.5, 1, 0.8, 0.5, 0.3, 0.4, 0.6, 0.5, 0.4, 0.6, 1, 2, 3.5, 4.5, 4, 3, 1.5, 0.5],
-      '週': [3.8, 4.2, 4, 4.5, 3.6, 2.8, 2.4],
-      '月': [3, 3.5, 3.2, 4, 3.6, 4.2, 4, 3.2, 2.8, 3.6, 4, 3.4, 3, 3.6, 4.2, 4.6, 3.8, 3.4, 3, 2.8, 3.8, 4.2, 3.6, 3.2, 2.8, 4, 3.6, 4.4, 3.8, 3.2],
-      '年': [78, 82, 80, 88, 92, 100, 108, 104, 92, 84, 80, 86],
+      '日': [0, 0, 0, 0, 0, 0.1, 0.35, 0.5, 0.3, 0.1, 0, 0, 0.05, 0, 0, 0.05, 0.1, 0.2, 0.35, 0.5, 0.6, 0.45, 0.25, 0.1],
+      '週': [2.6, 2.8, 2.7, 3.1, 2.9, 3.4, 3.2],
+      '月': [2.4, 2.7, 2.6, 3, 2.8, 3.2, 3, 2.6, 2.2, 2.8, 3, 2.6, 2.4, 2.8, 3.2, 3.4, 2.9, 2.7, 2.3, 2.2, 2.9, 3.2, 2.7, 2.5, 2.2, 3, 2.8, 3.3, 2.9, 2.5],
+      '年': [92, 88, 78, 66, 58, 52, 48, 50, 56, 68, 82, 68],
     },
-    trendYMax: { '日': 6, '週': 8, '月': 8, '年': 120 },
-    month: { label: '本月累積播放', value: 86.2, target: 120 },
+    trendYMax: { '日': 1.2, '週': 4, '月': 4, '年': 120 },
+    month: { label: '本月累積運轉', value: 68.4, target: 100 },
     maint: [
-      { id: 'fw',  icon: 'core', name: '韌體更新', last: '2026/05/05', next: '2026/06/05', status: 'warn', label: '有新版' },
-      { id: 'cal', icon: 'fan',  name: '聲學校正', last: '2026/02/10', next: '2026/08/10', status: 'ok',   label: '正常' },
+      { id: 'filter', icon: 'filter', name: '濾網清潔',     last: '2026/05/14', next: '2026/06/14', status: 'warn', label: '即將到期' },
+      { id: 'fan',    icon: 'fan',    name: '風扇檢查',     last: '2026/04/02', next: '2026/07/02', status: 'ok',   label: '正常' },
+      { id: 'heater', icon: 'core',   name: '加熱元件檢查', last: '2026/02/26', next: '2026/08/26', status: 'ok',   label: '正常' },
+      { id: 'duct',   icon: 'belt',   name: '排風管檢查',   last: '2026/03/20', next: '2026/09/20', status: 'ok',   label: '正常' },
     ],
   },
 }

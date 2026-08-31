@@ -1,10 +1,4 @@
 {
-  "04DA53A76F2681": {
-    "id": "door",
-    "label": "大門",
-    "description": "偵測入口狀態、開啟紀錄與環境安全資訊。",
-    "osc": "/nfc/door"
-  },
   "B7F6401E": {
     "id": "ac",
     "label": "冷氣",
@@ -25,7 +19,7 @@
   },
   "EEA1E43C": {
     "id": "socket",
-    "label": "插座",
+    "label": "智慧插座",
     "description": "智慧插座 — 顯示即時負載、今日用電。",
     "osc": "/nfc/socket"
   },
@@ -34,11 +28,5 @@
     "label": "窗簾",
     "description": "電動窗簾 — 顯示開合位置與模式。",
     "osc": "/nfc/curtain"
-  },
-  "4F54E53C": {
-    "id": "sound",
-    "label": "音響",
-    "description": "音響系統 — 顯示音量、來源與運作狀態。",
-    "osc": "/nfc/sound"
   }
 }
