@@ -18,23 +18,6 @@ export default function WelcomeScreen({ exiting, onStart }) {
       role="button"
       tabIndex={0}
     >
-      {/* Decorative pulsing dots — visual rhythm + signal "the system is live" */}
-      <span className="welcome-screen__dot welcome-screen__dot--top" />
-      <span className="welcome-screen__dot welcome-screen__dot--bl" />
-      <span className="welcome-screen__dot welcome-screen__dot--br" />
-
-      {/* Subtle circuit-trace decorations at the edges */}
-      <svg className="welcome-screen__circuit welcome-screen__circuit--left" viewBox="0 0 240 320" preserveAspectRatio="none" aria-hidden="true">
-        <path d="M0,40 L80,40 L100,60 L100,140 L140,180 L60,180 L40,200 L40,300" />
-        <path d="M0,120 L40,120 L60,100 L160,100" opacity="0.6" />
-        <path d="M0,260 L120,260 L140,240 L220,240" opacity="0.7" />
-      </svg>
-      <svg className="welcome-screen__circuit welcome-screen__circuit--right" viewBox="0 0 240 320" preserveAspectRatio="none" aria-hidden="true">
-        <path d="M240,40 L160,40 L140,60 L140,140 L100,180 L180,180 L200,200 L200,300" />
-        <path d="M240,120 L200,120 L180,100 L80,100" opacity="0.6" />
-        <path d="M240,260 L120,260 L100,240 L20,240" opacity="0.7" />
-      </svg>
-
       <div className="welcome-screen__content">
         <div className="welcome-screen__greeting">歡 迎 來 到</div>
         <h1 className="welcome-screen__title">

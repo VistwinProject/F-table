@@ -61,10 +61,6 @@ export const SLOTS = [
 
 const initSlotState = () => ({ connected: false, readerName: '', activeCard: null })
 
-function nowTime() {
-  return new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' })
-}
-
 export default function App() {
   // 'welcome' = welcome overlay shown, 'live' = main app interactive.
   // The tablet operator triggers 'live' via a WS `session-start` broadcast.
@@ -79,8 +75,6 @@ export default function App() {
   const [theme,             setTheme]              = useState(
     () => document.documentElement.getAttribute('data-theme') || 'dark'
   )
-  const [activityLog,       setActivityLog]        = useState([])
-  const [totalInteractions, setTotalInteractions]  = useState(0)
 
   const wsRef    = useRef(null)
   const timerRef = useRef(null)
@@ -89,11 +83,6 @@ export default function App() {
     setTheme(next)
     document.documentElement.setAttribute('data-theme', next)
     try { localStorage.setItem('theme', next) } catch (_) {}
-  }, [])
-
-  const addLog = useCallback((action, slotIdx) => {
-    const node = `NFC ${String(slotIdx + 1).padStart(2, '0')}`
-    setActivityLog(prev => [{ id: Date.now() + Math.random(), time: nowTime(), node, action }, ...prev].slice(0, 7))
   }, [])
 
   const patchSlot = useCallback((index, patch) => {
@@ -123,14 +112,12 @@ export default function App() {
         case 'reader-connected':
           if (idx !== null) {
             patchSlot(idx, { connected: true, readerName: msg.reader })
-            addLog('Connected', idx)
           }
           break
 
         case 'reader-disconnected':
           if (idx !== null) {
             patchSlot(idx, { connected: false, readerName: '', activeCard: null })
-            addLog('Disconnected', idx)
           }
           break
 
@@ -138,7 +125,6 @@ export default function App() {
           if (idx !== null) {
             patchSlot(idx, { activeCard: { uid: msg.uid, known: msg.known, data: msg.data } })
             setFocusedIdx(idx)
-            addLog('Activated', idx)
             setTotalInteractions(n => n + 1)
             // Pre-fetch model into browser cache so subsequent taps load instantly
             if (msg.data?.model) fetch(msg.data.model, { priority: 'low' }).catch(() => {})
@@ -148,7 +134,6 @@ export default function App() {
         case 'tag-remove':
           if (idx !== null) {
             patchSlot(idx, { activeCard: null })
-            addLog('Removed', idx)
           }
           break
 
@@ -179,7 +164,7 @@ export default function App() {
     }
 
     ws.onerror = () => ws.close()
-  }, [patchSlot, addLog])
+  }, [patchSlot])
 
   useEffect(() => {
     connect()
@@ -220,24 +205,17 @@ export default function App() {
   }, [slotStates, focusedIdx])
 
   const activeCount    = slotStates.filter(s => s.activeCard !== null).length
-  const connectedCount = slotStates.filter(s => s.connected).length
   const focusedState   = focusedIdx !== null ? slotStates[focusedIdx] : null
-  const focusedSlot    = focusedIdx !== null ? SLOTS[focusedIdx] : null
 
   return (
     <div className="app-frame">
       <StudioHeader theme={theme} onThemeToggle={handleThemeToggle} />
 
       <div className="app-body">
-        <InfoPanel
-          wsStatus={wsStatus}
-          focusedSlot={focusedSlot}
-          focusedState={focusedState}
-          activeCount={activeCount}
-          connectedCount={connectedCount}
-          activityLog={activityLog}
-          totalInteractions={totalInteractions}
-        />
+        {/* InfoPanel 只用這兩個 prop（見其 signature）。舊版還傳了
+            focusedSlot / activeCount / connectedCount / activityLog /
+            totalInteractions，全部沒有被解構，已一併移除。 */}
+        <InfoPanel wsStatus={wsStatus} focusedState={focusedState} />
 
         <main className="main">
           <div className="hub-container">
@@ -373,21 +351,6 @@ function ConnectionLines({ slots, slotStates }) {
       viewBox={`0 0 ${W} ${H}`}
       preserveAspectRatio="none"
     >
-      <defs>
-        {/* Soft cyan bloom — the halo around each beam.
-            filterUnits="userSpaceOnUse" with an explicit region covering the
-            whole SVG is REQUIRED: the default objectBoundingBox region
-            collapses to zero for a perfectly horizontal or vertical <line>
-            (bbox height/width = 0), which would make the halo vanish for the
-            cardinal-direction beams (NFC 01 @180°, 05 @90°, 09 @0°). */}
-        <filter id="beam-bloom" filterUnits="userSpaceOnUse" x="0" y="0" width={W} height={H}>
-          <feGaussianBlur stdDeviation="4" />
-        </filter>
-        <filter id="pulse-bloom" filterUnits="userSpaceOnUse" x="0" y="0" width={W} height={H}>
-          <feGaussianBlur stdDeviation="6" />
-        </filter>
-      </defs>
-
       {slots.map((slot) => {
         const pos = slotPos(slot.slotIndex, slots.length)
         const sp  = toPx(pos.x, pos.y)
@@ -407,62 +370,23 @@ function ConnectionLines({ slots, slotStates }) {
 
         const state    = slotStates[slot.slotIndex]
         const isActive = state.activeCard !== null
-        // Only two beam looks now: active (full neon + sweep) vs everything
-        // else (a simple faint line). "Reader connected but no tag" is shown
-        // by the NODE RING going solid (NfcSlot), not by the beam — so a
-        // connected-but-idle slot keeps the same simple line as a no-reader slot.
+        // 連線只有兩種樣子：active 與其他。「讀卡機在線但沒卡」是由 NfcSlot 的
+        // 圓環轉實線表示，不由連線表示 —— 所以那種狀態的線跟沒讀卡機時一樣安靜。
         const stateSuffix = isActive ? '--active' : ''
-
-        // Sweep: bright wave segment travelling slot → hub (active only).
-        // Long segment (≈ half the beam length) so it reads as a "wave".
-        // Slower, sparser pulses — one wave at a time, ~3 s cycle, so the
-        // flow feels calm/deliberate rather than a rapid strobe.
-        const L         = Math.hypot(sx - hx, sy - hy)
-        const SWEEP_LEN = Math.max(50, L * 0.3)
-        const sweepDur  = 2.2
-        const sweepN    = 3
-        const dashArr   = `${SWEEP_LEN} ${L * 2}`
 
         return (
           <g key={slot.id}>
-            {/* Outer bloomed halo (wide, soft cyan) */}
+            {/* 連線本體：idle 極細灰線 → active 白高光（樣式全在 CSS 的 .beam-halo）。
+                舊版的高斯模糊光暈與三段掃描光已移除。 */}
             <line
               x1={hx} y1={hy} x2={sx} y2={sy}
               className={`beam-halo${stateSuffix && ' beam-halo' + stateSuffix}`}
-              filter="url(#beam-bloom)"
             />
-            {/* Bright thin core (white neon interior of the energy beam) */}
+            {/* core 疊層保留掛點但目前 CSS 設為透明，之後要做雙層線不用再動這裡的幾何 */}
             <line
               x1={hx} y1={hy} x2={sx} y2={sy}
               className={`beam-core${stateSuffix && ' beam-core' + stateSuffix}`}
             />
-
-            {/* Wave sweeps (slot → hub) — active state only. Three staggered
-                bright segments travel the beam, giving a clear directional
-                flow without strobing the whole line. */}
-            {isActive && Array.from({ length: sweepN }).map((_, i) => (
-              <line
-                key={`sw-${i}`}
-                x1={sx} y1={sy} x2={hx} y2={hy}
-                className="beam-sweep beam-sweep--active"
-                strokeDasharray={dashArr}
-              >
-                <animate
-                  attributeName="stroke-dashoffset"
-                  from="0"
-                  to={-(L + SWEEP_LEN)}
-                  dur={`${sweepDur}s`}
-                  begin={`${-((i * sweepDur) / sweepN).toFixed(2)}s`}
-                  repeatCount="indefinite"
-                  calcMode="spline"
-                  keyTimes="0;1"
-                  keySplines="0.4 0 0.6 1"
-                />
-              </line>
-            ))}
-
-            {/* (Endpoint dot removed — beams connect directly with no solid
-                circle at the slot end, for all states.) */}
           </g>
         )
       })}

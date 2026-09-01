@@ -1,53 +1,77 @@
 /* ── Design Tokens ───────────────────────────────────────────────────────────── */
+/* 極簡黑灰白透明（樣本版）。三端（F-table / F-wall / F-Ipad）共用同一組語意與數值，
+   F-wall 因為是 JS 物件餵給 SVG，同一份寫在 F-wall/src/config/theme.js。
+   ⚠ 變數「名稱」刻意全部沿用舊的，這樣所有元件不用改就跟著換皮。 */
 :root {
-  /* Teal accent — deep, refined */
-  --accent:       #247ed1;  /* ANLB 副色 1 */
-  --accent-2:     #5b9fe0;
-  --accent-deep:  #1a5aa0;
-  --accent-dim:   rgba(36, 126, 209, 0.10);
-  --accent-glow:  rgba(36, 126, 209, 0.32);
-  --accent-ring:  rgba(36, 126, 209, 0.22);
+  /* accent 在無彩體系裡就是「白高光」—— 保留名稱，語意從顏色改為亮度層級 */
+  --accent:       rgba(255, 255, 255, 0.85);
+  --accent-2:     rgba(255, 255, 255, 0.62);
+  --accent-deep:  rgba(255, 255, 255, 0.38);
+  --accent-dim:   rgba(255, 255, 255, 0.08);
+  --accent-glow:  rgba(255, 255, 255, 0.12);
+  --accent-ring:  rgba(255, 255, 255, 0.22);
 
-  --green:  #5b9fe0;  /* 品牌圖面無綠色，狀態「正常」沿用藍系 */
-  --red:    #f43f5e;
-  --amber:  #f59e0b;
-  --blue:   #67b3fe;  /* ANLB 副色 2 */
+  /* 狀態色樣本階段一併走無彩：語意由文字與「圓點實心 vs 空心」承擔。
+     要開回功能色，改下面三行即可：--green #30d158 / --red #ff453a / --amber #ff9f0a */
+  --green:  rgba(255, 255, 255, 0.95);
+  --red:    rgba(255, 255, 255, 0.62);
+  --amber:  rgba(255, 255, 255, 0.62);
+  --blue:   rgba(255, 255, 255, 0.85);
 
-  --font-display: 'Space Grotesk', 'Chiron Hei HK', sans-serif;
-  --font-cjk:     'Chiron Hei HK', 'Space Grotesk', sans-serif;
-  --font-hud:     'JetBrains Mono', monospace;
-  --font-dot:     'Pixelify Sans', monospace;
+  /* 字體：拿掉 Space Grotesk / JetBrains Mono / Pixelify Sans。
+     等寬 HUD 字是舊「科幻感」的主要來源，數字改用系統字 + tabular-nums 對齊。 */
+  --font-display: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial,
+                  'Chiron Hei HK', 'PingFang TC', 'Microsoft JhengHei', sans-serif;
+  --font-cjk:     var(--font-display);
+  --font-hud:     var(--font-display);
 
   --ease: cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* 陰影分層 —— 用陰影表達層級，不用發光 */
+  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-2: 0 8px 32px rgba(0, 0, 0, 0.6);
 }
 
 [data-theme="dark"] {
-  /* Background reads teal, but UI chrome stays neutral white/gray */
-  --c-bg:        #0d2058;  /* ANLB 主色 */
-  --c-surface:   #0a1c4e;
-  --c-surface-2: #102459;
-  --c-surface-3: #152c66;
-  --c-border:    #23386f;
-  --c-border-2:  #2f4a86;
-  --c-text:      #dce9ff;
-  --c-text-dim:  #7d93c4;
-  --c-text-mute: #a8bce0;
+  --c-bg:        #000000;
+  --c-surface:   rgba(255, 255, 255, 0.04);
+  --c-surface-2: rgba(255, 255, 255, 0.06);
+  --c-surface-3: rgba(255, 255, 255, 0.08);
+  --c-border:    rgba(255, 255, 255, 0.10);
+  --c-border-2:  rgba(255, 255, 255, 0.22);
+  --c-text:      rgba(255, 255, 255, 0.95);
+  --c-text-mute: rgba(255, 255, 255, 0.62);
+  --c-text-dim:  rgba(255, 255, 255, 0.38);
   --c-accent:    var(--accent);
-  --frame-border: rgba(103, 179, 254, 0.16);
+  --frame-border: rgba(255, 255, 255, 0.10);
+}
+
+/* 淺色是單純的反相版（展場用不到，但 DnaSwitch 還在，別讓它切出破圖） */
+[data-theme="light"] {
+  --c-bg:        #ffffff;
+  --c-surface:   rgba(0, 0, 0, 0.03);
+  --c-surface-2: rgba(0, 0, 0, 0.05);
+  --c-surface-3: rgba(0, 0, 0, 0.07);
+  --c-border:    rgba(0, 0, 0, 0.10);
+  --c-border-2:  rgba(0, 0, 0, 0.22);
+  --c-text:      rgba(0, 0, 0, 0.92);
+  --c-text-mute: rgba(0, 0, 0, 0.60);
+  --c-text-dim:  rgba(0, 0, 0, 0.38);
+  --c-accent:    rgba(0, 0, 0, 0.85);
+  --frame-border: rgba(0, 0, 0, 0.12);
 }
 
 [data-theme="light"] {
-  --c-bg:        #eef2fa;
-  --c-surface:   #ffffff;
-  --c-surface-2: #f3f6fc;
-  --c-surface-3: #e5ebf7;
-  --c-border:    #cdd8ea;
-  --c-border-2:  #b0c2de;
-  --c-text:      #0d1a3a;
-  --c-text-dim:  #6a7c9e;
-  --c-text-mute: #4a5c80;
-  --c-accent:    #1a5aa0;
-  --frame-border: rgba(26, 90, 160, 0.20);
+  --accent:      rgba(0, 0, 0, 0.85);
+  --accent-2:    rgba(0, 0, 0, 0.60);
+  --accent-deep: rgba(0, 0, 0, 0.38);
+  --accent-dim:  rgba(0, 0, 0, 0.06);
+  --accent-glow: rgba(0, 0, 0, 0.10);
+  --accent-ring: rgba(0, 0, 0, 0.20);
+  --green: rgba(0, 0, 0, 0.92);
+  --red:   rgba(0, 0, 0, 0.60);
+  --amber: rgba(0, 0, 0, 0.60);
+  --blue:  rgba(0, 0, 0, 0.85);
 }
 
 /* ── Reset ───────────────────────────────────────────────────────────────────── */
@@ -56,7 +80,7 @@
 html, body {
   width: 100%; height: 100%;
   overflow: hidden;
-  background: #0d2058;
+  background: var(--c-bg);
   color: var(--c-text);
   font-family: var(--font-display);
   font-size: 16px;
@@ -77,55 +101,9 @@ html, body {
   border: 1px solid var(--frame-border);
   border-radius: 28px;
   overflow: hidden;
-  background-color: #0d2058;
-  background-image:
-    /* Primary bloom — teal behind the hub */
-    radial-gradient(ellipse 78% 68% at 64% 30%, rgba(36, 126, 209, 0.36) 0%, rgba(13, 32, 88, 0.16) 45%, transparent 75%),
-    /* Secondary — teal behind the info panel */
-    radial-gradient(ellipse 50% 70% at 12% 44%, rgba(0, 130, 132, 0.30) 0%, rgba(0, 72, 74, 0.10) 52%, transparent 76%),
-    /* Bottom fade — depth */
-    radial-gradient(ellipse 70% 35% at 50% 100%, rgba(0, 50, 52, 0.30) 0%, transparent 74%),
-    /* Outer vignette into black */
-    radial-gradient(ellipse 120% 100% at 50% 50%, transparent 50%, rgba(0, 0, 0, 0.62) 100%),
-    /* Grid — neutral white at very low opacity, no green */
-    linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
-  background-size:
-    100%, 100%, 100%, 100%,
-    48px 48px, 48px 48px;
-  background-position:
-    0 0, 0 0, 0 0, 0 0,
-    center center, center center;
+  background: var(--c-bg);
   display: flex;
   flex-direction: column;
-  box-shadow:
-    inset 0 0 180px rgba(13, 32, 88, 0.16),
-    inset 0 1px 0 rgba(255, 255, 255, 0.05),
-    0 0 90px rgba(0, 0, 0, 0.80);
-}
-
-/* corner glow accents — teal */
-.app-frame::before,
-.app-frame::after {
-  content: '';
-  position: absolute;
-  border-radius: 50%;
-  pointer-events: none;
-  z-index: 0;
-}
-.app-frame::before {
-  width: 380px; height: 380px;
-  top: -120px; left: -120px;
-  background: radial-gradient(circle, rgba(0, 165, 168, 0.30), transparent 70%);
-  opacity: 0.65;
-  filter: blur(14px);
-}
-.app-frame::after {
-  width: 340px; height: 340px;
-  bottom: -120px; right: -120px;
-  background: radial-gradient(circle, rgba(0, 140, 145, 0.22), transparent 70%);
-  opacity: 0.55;
-  filter: blur(16px);
 }
 
 .frame-footer {
@@ -153,8 +131,7 @@ html, body {
   width: 32px;
   height: 2px;
   border-radius: 1px;
-  background: linear-gradient(90deg, transparent, var(--c-accent), transparent);
-  opacity: 0.6;
+  background: var(--c-border-2);
 }
 
 /* ── App body layout ─────────────────────────────────────────────────────────── */
@@ -178,25 +155,11 @@ html, body {
   height: 40px;
   min-height: 40px;
   background: transparent;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.10);
+  border-bottom: 1px solid var(--c-border);
   flex-shrink: 0;
   z-index: 10;
   position: relative;
 }
-
-/* Header tick marks at 25/75% */
-.studio-header::before,
-.studio-header::after {
-  content: '';
-  position: absolute;
-  bottom: -1px;
-  width: 1px;
-  height: 6px;
-  background: rgba(255, 255, 255, 0.30);
-  pointer-events: none;
-}
-.studio-header::before { left: 25%; }
-.studio-header::after  { left: 75%; }
 
 .studio-header__brand {
   display: flex;
@@ -273,21 +236,16 @@ html, body {
   max-width: 540px;
   flex-shrink: 0;
   height: 100%;
-  background: rgba(255, 255, 255, 0.018);
+  /* 毛玻璃保留 —— 那本來就是 Apple 語言，不是舊 HUD 的東西 */
+  background: var(--c-surface);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.14);
+  border: 1px solid var(--c-border);
   border-radius: 18px;
   display: flex;
   flex-direction: column;
   overflow: hidden;
   position: relative;
-  animation: frame-breathe 4.8s ease-in-out infinite;
-}
-
-@keyframes frame-breathe {
-  0%, 100% { border-color: rgba(255, 255, 255, 0.12); }
-  50%       { border-color: rgba(255, 255, 255, 0.22); }
 }
 
 /* ── Main / hub area — open canvas, no frame ─────────────────────────────────── */
@@ -309,48 +267,6 @@ html, body {
   max-width: 1900px;
 }
 
-/* Ambient fog layers — float behind all hub content */
-.hub-container::before {
-  content: '';
-  position: absolute;
-  width: 84%;
-  height: 84%;
-  top: 8%;
-  left: 8%;
-  background: radial-gradient(ellipse at center,
-    rgba(90, 140, 115, 0.10) 0%,
-    rgba(50, 90, 75, 0.04) 42%,
-    transparent 68%);
-  filter: blur(40px);
-  border-radius: 50%;
-  pointer-events: none;
-  z-index: 0;
-  animation: fog-breathe 9s ease-in-out infinite;
-}
-
-.hub-container::after {
-  content: '';
-  position: absolute;
-  width: 56%;
-  height: 56%;
-  top: 22%;
-  left: 22%;
-  background: radial-gradient(ellipse at center,
-    rgba(120, 170, 145, 0.06) 0%,
-    transparent 65%);
-  filter: blur(28px);
-  border-radius: 50%;
-  pointer-events: none;
-  z-index: 0;
-  animation: fog-breathe 13s ease-in-out infinite reverse;
-}
-
-@keyframes fog-breathe {
-  0%, 100% { opacity: 0.50; transform: scale(0.97); }
-  50%       { opacity: 0.85; transform: scale(1.04); }
-}
-
-
 /* ── SVG connection lines ────────────────────────────────────────────────────── */
 .connections {
   position: absolute;
@@ -362,76 +278,47 @@ html, body {
   z-index: 3;
 }
 
-/* ── Beams: layered halo + bright core for Tron-style energy glow ───────────────
-   The SVG viewBox is set to actual container px, so stroke widths are screen px
-   and circles render perfectly round. Each beam is two stacked <line>s:
-   the bloomed halo underneath, a bright thin core on top. A traveling pulse
-   circle is animated along the beam to convey transmission flow. */
-
-/* v2: visible "powered neon network" look at all times. Idle has clear cyan
-   halo + bright white core but no movement. Active state amps both halo width
-   and core brightness — like Tron lightcycle trails. */
+/* ── Beams：中樞 ↔ slot 的連線 ────────────────────────────────────────────────
+   端點座標由 App.jsx 的 slotPos / INSET_RATIO 算出（那是版面邏輯，不要動）。
+   極簡版只留兩階：idle 極細灰線、active 白高光。
+   舊版的 halo / core 雙層、三段掃描光與發光濾鏡全部拿掉 —— 只留進出場淡入。 */
 .beam-halo {
   fill: none;
   stroke-linecap: round;
-  stroke: rgba(103, 179, 254, 0.35);
-  stroke-width: 6;
-  /* "Power-up" transition: when a tag lands the beam swells/brightens over
-     ~0.45s instead of snapping on. ease-out so it kicks in fast then settles. */
-  transition: stroke-width 0.45s var(--ease), stroke 0.45s var(--ease);
+  stroke: var(--c-border);
+  stroke-width: 1;
+  transition: stroke-width 0.28s var(--ease), stroke 0.28s var(--ease);
 }
 .beam-halo--active {
-  stroke: rgba(120, 240, 240, 0.88);
-  stroke-width: 16;
+  stroke: var(--accent);
+  stroke-width: 1.5;
 }
 
+/* core 疊在 halo 上，極簡版讓它完全透明 —— 保留選擇器是因為 JSX 還在畫這條線，
+   之後若要把「雙層線」加回來，改這裡就好，不用動 App.jsx 的幾何。 */
 .beam-core {
   fill: none;
-  stroke-linecap: round;
-  stroke: rgba(220, 252, 252, 0.78);
-  stroke-width: 1.6;
-  transition: stroke-width 0.45s var(--ease), stroke 0.45s var(--ease);
+  stroke: transparent;
+  stroke-width: 0;
 }
-/* Active core stays modest in width — the cyan halo should dominate the
-   colour read of the beam; the white core is just the bright inner thread.
-   Sweeps on top of this carry the "data flowing" feel. */
 .beam-core--active {
-  stroke: rgba(245, 255, 255, 0.95);
-  stroke-width: 2.2;
+  stroke: transparent;
+  stroke-width: 0;
 }
 
-/* Sweep — bright wave segment travelling along the beam slot → hub.
-   Length is set inline (~half the beam length) so it reads as a wave,
-   not a sparse dot. Three of these are staggered so the beam is never
-   without a visible wave somewhere along it — that's the "data flowing"
-   directional cue. */
-.beam-sweep {
-  fill: none;
-  stroke-linecap: round;
-}
+/* 掃描光段：極簡版不顯示（循環動畫全部移除） */
+.beam-sweep,
 .beam-sweep--active {
-  stroke: rgba(255, 255, 255, 0.98);
-  stroke-width: 3.6;
-  filter:
-    drop-shadow(0 0 5px rgba(232, 248, 255, 1))
-    drop-shadow(0 0 14px rgba(120, 240, 240, 0.95))
-    drop-shadow(0 0 30px rgba(103, 179, 254, 0.55));
-  /* Comet fades in during the power-up so it joins gradually, not popping */
-  animation: beam-sweep-in 0.45s ease-out both;
-}
-
-@keyframes beam-sweep-in {
-  from { opacity: 0; }
-  to   { opacity: 1; }
+  display: none;
 }
 
 /* (Slot-end endpoint dot removed entirely — beams connect with no solid
    circle at the slot side, for all states.) */
 
 
-/* ── Center hub — sits ON the arc's baseline (same y as side nodes → true 180° fan above).
-   SVG-based glowing orb adapted from f-wall — concentric rings + tick marks
-   + dashed arc + radial-gradient core. */
+/* ── Center hub ───────────────────────────────────────────────────────────────
+   ⚠ left/top/width/height 是版面（跟 slotPos 的 180° 扇形共用同一條基線），不要動。
+   顏色用 color 而不是 stroke，元件裡的 SVG 走 currentColor。 */
 .center-hub {
   position: absolute;
   left: 50%; top: 70%;
@@ -439,12 +326,16 @@ html, body {
   height: 280px;
   transform: translate(-50%, -50%);
   pointer-events: none;
+  color: var(--c-border-2);
+  transition: color 0.28s var(--ease);
 }
+
+.center-hub--active { color: var(--accent); }
 
 .center-hub__svg {
   width: 100%;
   height: 100%;
-  overflow: visible;     /* the wide background aura extends past viewBox */
+  overflow: visible;
   display: block;
 }
 
@@ -456,14 +347,14 @@ html, body {
   left: 50%;
   transform: translateX(-50%);
   white-space: nowrap;
-  font-family: var(--font-hud);
-  font-size: 15px;
-  letter-spacing: 0.28em;
-  color: rgba(255, 255, 255, 0.65);
+  font-size: 13px;
+  letter-spacing: 0.18em;
+  color: var(--c-text-dim);
   text-transform: uppercase;
-  text-shadow: 0 0 8px rgba(0, 0, 0, 0.50);
-  transition: color 0.45s var(--ease);
+  transition: color 0.28s var(--ease);
 }
+
+.center-hub--active .hub-label { color: var(--c-text-mute); }
 
 
 /* ── NFC Slot ────────────────────────────────────────────────────────────────── */
@@ -477,41 +368,21 @@ html, body {
   z-index: 2;
 }
 
-/* Outermost dashed ring — neutral white */
+/* ── NFC slot ─────────────────────────────────────────────────────────────────
+   極簡版：一圈 hairline，狀態靠「邊框亮度 + 底色 + 陰影」三階分。
+   舊版的虛線外環、中間環、旋轉掃描弧與三重發光全部移除。
+   .slot-outer 的 86px 尺寸與 .slot-label 的定位是版面，不要動。 */
 .slot-outer {
   width: 86px; height: 86px;
   border-radius: 50%;
-  border: 1px dashed rgba(255, 255, 255, 0.16);
+  border: 1px solid var(--c-border);
+  background: transparent;
   display: flex;
   align-items: center;
   justify-content: center;
   position: relative;
-  transition: border-color 0.45s var(--ease), box-shadow 0.45s var(--ease);
-  box-shadow: 0 0 12px rgba(0, 0, 0, 0.20);
-}
-
-/* Middle ring */
-.slot-outer::before {
-  content: '';
-  position: absolute;
-  width: 63px; height: 63px;
-  border-radius: 50%;
-  border: 1px solid rgba(255, 255, 255, 0.10);
-  pointer-events: none;
-  transition: border-color 0.45s var(--ease);
-}
-
-/* Sweep arc for active state — via ::after */
-.slot-outer::after {
-  content: '';
-  position: absolute;
-  inset: -2px;
-  border-radius: 50%;
-  border: 1.5px solid transparent;
-  border-top-color: var(--c-accent);
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.3s var(--ease);
+  transition: border-color 0.28s var(--ease), background 0.28s var(--ease),
+              box-shadow 0.28s var(--ease);
 }
 
 /* Inner — text only, no circle/border */
@@ -523,24 +394,23 @@ html, body {
   align-items: center;
   justify-content: center;
   gap: 1px;
-  transition: color 0.45s var(--ease);
+  transition: color 0.28s var(--ease);
 }
 
 .slot-plus {
   font-size: 17px;
-  font-weight: 200;
-  color: rgba(255, 255, 255, 0.55);
+  font-weight: 300;
+  color: var(--c-text-dim);
   line-height: 1;
-  font-family: var(--font-hud);
-  transition: color 0.45s var(--ease);
+  transition: color 0.28s var(--ease);
 }
 
 .slot-index-small {
-  font-family: var(--font-hud);
   font-size: 9.5px;
   letter-spacing: 0.10em;
-  color: rgba(255, 255, 255, 0.40);
-  transition: color 0.45s var(--ease);
+  color: var(--c-text-dim);
+  font-variant-numeric: tabular-nums;
+  transition: color 0.28s var(--ease);
 }
 
 .slot-label {
@@ -549,50 +419,31 @@ html, body {
   left: 50%;
   transform: translateX(-50%);
   white-space: nowrap;
-  font-family: var(--font-hud);
-  font-size: 15px;
-  letter-spacing: 0.22em;
-  color: rgba(255, 255, 255, 0.55);
+  font-size: 13px;
+  letter-spacing: 0.14em;
+  color: var(--c-text-dim);
   text-transform: uppercase;
-  transition: color 0.45s var(--ease);
+  transition: color 0.28s var(--ease);
 }
 
-/* ── Connected (reader present, no card) ── */
-.nfc-slot.connected .slot-outer {
-  border-color: rgba(255, 255, 255, 0.30);
-  border-style: solid;
-  box-shadow: 0 0 14px rgba(0, 0, 0, 0.22);
-}
-.nfc-slot.connected .slot-inner { background: transparent; border: none; }
-.nfc-slot.connected .slot-plus        { color: rgba(255, 255, 255, 0.78); }
-.nfc-slot.connected .slot-index-small { color: rgba(255, 255, 255, 0.55); }
-.nfc-slot.connected .slot-label       { color: rgba(255, 255, 255, 0.70); }
+/* ── Connected（讀卡機在線、還沒放卡）── */
+.nfc-slot.connected .slot-outer      { border-color: var(--c-border-2); }
+.nfc-slot.connected .slot-plus       { color: var(--c-text-mute); }
+.nfc-slot.connected .slot-index-small { color: var(--c-text-mute); }
+.nfc-slot.connected .slot-label      { color: var(--c-text-mute); }
 
-/* ── Active (card present) ── */
+/* ── Active（卡片在上面）：純白高光 + 微透明底 ── */
 .nfc-slot.active .slot-outer {
-  border-color: rgba(255, 255, 255, 0.55);
-  border-style: solid;
-  box-shadow:
-    0 0 0 1px var(--accent-ring),
-    0 0 24px var(--accent-glow),
-    0 0 48px rgba(106, 164, 138, 0.18);
+  border-color: var(--accent);
+  background: var(--c-surface-3);
 }
-.nfc-slot.active .slot-outer::after  { opacity: 1; animation: slot-sweep 2.2s linear infinite; }
-.nfc-slot.active .slot-inner { background: transparent; border: none; }
-.nfc-slot.active .slot-plus        { color: rgba(255, 255, 255, 0.95); font-weight: 300; }
-.nfc-slot.active .slot-index-small { color: rgba(255, 255, 255, 0.78); }
-.nfc-slot.active .slot-label       { color: rgba(255, 255, 255, 0.95); text-shadow: 0 0 10px var(--accent-glow); letter-spacing: 0.28em; }
+.nfc-slot.active .slot-plus        { color: var(--c-text); }
+.nfc-slot.active .slot-index-small { color: var(--c-text); }
+.nfc-slot.active .slot-label       { color: var(--c-text); letter-spacing: 0.18em; }
 
-/* ── Focused highlight ── */
+/* ── Focused（資訊面板正在顯示這一張）：多一層陰影拉開層級，不用顏色 ── */
 .nfc-slot.focused .slot-outer {
-  box-shadow:
-    0 0 0 1.5px rgba(255, 255, 255, 0.18),
-    0 0 14px rgba(255, 255, 255, 0.06);
-}
-
-@keyframes slot-sweep {
-  from { transform: rotate(0deg); }
-  to   { transform: rotate(360deg); }
+  box-shadow: var(--shadow-2);
 }
 
 /* ── WS offline badge ────────────────────────────────────────────────────────── */
@@ -600,8 +451,8 @@ html, body {
   position: absolute;
   bottom: 28px;
   right: 22px;
-  background: rgba(244, 63, 94, 0.10);
-  border: 1px solid rgba(244, 63, 94, 0.40);
+  background: var(--c-surface-2);
+  border: 1px solid var(--c-border-2);
   border-radius: 6px;
   padding: 7px 14px;
   font-family: var(--font-hud);
@@ -773,20 +624,16 @@ html, body {
   gap: 8px;
   margin-bottom: 4px;
 }
+/* 待機三點：改靜態、用不透明度遞減表示「等待中」的方向感。
+   循環脈動與發光都拿掉了（只留進出場淡入淡出）。 */
 .idle-card__pulse span {
-  width: 8px; height: 8px;
+  width: 6px; height: 6px;
   border-radius: 50%;
-  background: var(--c-accent);
-  box-shadow: 0 0 8px var(--c-accent);
-  animation: idle-blip 1.4s ease-in-out infinite;
+  background: var(--c-text);
 }
-.idle-card__pulse span:nth-child(2) { animation-delay: 0.2s; }
-.idle-card__pulse span:nth-child(3) { animation-delay: 0.4s; }
-
-@keyframes idle-blip {
-  0%, 100% { opacity: 0.3; transform: scale(0.7); }
-  50%       { opacity: 1;   transform: scale(1);   }
-}
+.idle-card__pulse span:nth-child(1) { opacity: 0.85; }
+.idle-card__pulse span:nth-child(2) { opacity: 0.55; }
+.idle-card__pulse span:nth-child(3) { opacity: 0.28; }
 
 .idle-card__title {
   font-family: var(--font-cjk);
@@ -832,7 +679,7 @@ html, body {
   letter-spacing: 0.04em;
 }
 .idle-foot__key { color: var(--c-legible-2); }
-.idle-foot__val { color: #e2e8ea; font-family: var(--font-hud); font-size: 14px; font-weight: 500; }
+.idle-foot__val { color: var(--c-text); font-size: 14px; font-weight: 500; font-variant-numeric: tabular-nums; }
 .idle-foot__val.is-ok  { color: var(--green); }
 .idle-foot__val.is-err { color: var(--red); }
 
@@ -841,21 +688,14 @@ html, body {
   font-size: 25px;
   font-weight: 800;
   letter-spacing: 0.04em;
-  color: #f2f6f8;
+  color: var(--c-text);
   margin: 0 0 4px;
   display: flex;
   align-items: baseline;
   gap: 4px;
   /* Tighter, dimmer glow — a wide blur softens the edges and hurts legibility
      for presbyopic viewers; keep just a faint halo for the tech look. */
-  text-shadow: 0 0 6px rgba(0, 200, 200, 0.18);
 }
-.device-dash__title-brace {
-  color: var(--c-accent);
-  font-weight: 300;
-  opacity: 0.6;
-}
-
 /* ── Card (re-used by every dashboard section) ── */
 .device-card {
   background: rgba(255, 255, 255, 0.04);
@@ -878,7 +718,7 @@ html, body {
    Showcase audience skews older / presbyopic, and projection washes out low
    contrast. Within the dashboard we brighten the muted secondary text and add
    weight so strokes hold up. Bright "legible secondary" tone used throughout. */
-.device-dash { --c-legible-2: #cdd6da; }   /* brighter than --c-text-dim #8a8f93 */
+.device-dash { --c-legible-2: var(--c-text-mute); }
 
 .device-card__label {
   font-family: var(--font-cjk);
@@ -908,7 +748,7 @@ html, body {
   font-family: var(--font-hud);
   font-size: 18px;
   font-weight: 500;
-  color: #d4dbde;
+  color: var(--c-text-mute);
   letter-spacing: 0.04em;
 }
 .usage-stat__delta {
@@ -931,7 +771,7 @@ html, body {
   letter-spacing: 0.04em;
 }
 /* Brighter green for "good" delta — the token green reads dim when small */
-.usage-stat__delta.is-good .usage-stat__delta-pct { color: #5fe0c0; }
+.usage-stat__delta.is-good .usage-stat__delta-pct { color: var(--c-text); }
 .usage-stat__delta.is-bad  .usage-stat__delta-pct { color: var(--amber); }
 
 /* ── Range tabs (日/週/月/年) ── */
@@ -954,7 +794,6 @@ html, body {
 .range-tab.active {
   background: var(--accent-dim);
   color: var(--c-text);
-  box-shadow: 0 0 12px rgba(36, 126, 209, 0.30);
 }
 
 /* ── Trend bar chart ── */
@@ -1002,8 +841,7 @@ html, body {
   flex: 1;
   min-width: 3px;
   border-radius: 2px 2px 0 0;
-  background: linear-gradient(180deg, #b8a4ff 0%, #6fb9ff 55%, #4d9ec8 100%);
-  box-shadow: 0 0 6px rgba(120, 180, 255, 0.30);
+  background: rgba(255, 255, 255, 0.72);
   transition: height 0.4s var(--ease);
 }
 .trend-chart__xaxis {
@@ -1047,8 +885,7 @@ html, body {
 }
 .cumulative__fill {
   height: 100%;
-  background: linear-gradient(90deg, #b8a4ff 0%, #6fb9ff 50%, #54d6ec 100%);
-  box-shadow: 0 0 10px rgba(120, 200, 240, 0.55);
+  background: rgba(255, 255, 255, 0.85);
   border-radius: 3px;
   transition: width 0.6s var(--ease);
 }
@@ -1114,10 +951,14 @@ html, body {
   font-weight: 600;
   text-align: right;
 }
-.maint-row__status--ok   { color: #5fe0c0; }
-.maint-row__status--warn { color: #ffb22e; }
+/* 狀態無彩：ok 用一般字重、warn 用高亮 + 半粗，語意主要靠「即將到期」四個字。 */
+.maint-row__status--ok   { color: var(--c-text-dim); font-weight: 400; }
+.maint-row__status--warn { color: var(--c-text); font-weight: 600; }
 
-/* ── Welcome screen overlay ──────────────────────────────────────────────────── */
+/* ── Welcome screen overlay ──────────────────────────────────────────────────
+   ⚠ 600ms 的淡出時長同時寫在 App.jsx（兩處），改這裡要一起改。
+   極簡版：純黑底 + 三行字。舊版的青綠徑向漸層、發光字、三顆脈動點與兩段
+   PCB 走線 SVG（JSX 也一併刪了）全部移除。 */
 .welcome-screen {
   position: absolute;
   inset: 0;
@@ -1131,11 +972,7 @@ html, body {
   outline: none;
   opacity: 1;
   transition: opacity 600ms cubic-bezier(0.5, 0, 0.5, 1);
-  background:
-    radial-gradient(ellipse 60% 50% at 50% 50%, rgba(0, 80, 90, 0.30) 0%, rgba(0, 30, 35, 0.55) 50%, rgba(4, 19, 69, 0.92) 100%),
-    rgba(4, 19, 69, 0.96);
-  backdrop-filter: blur(2px);
-  -webkit-backdrop-filter: blur(2px);
+  background: var(--c-bg);
   animation: welcome-fade-in 600ms ease-out;
 }
 
@@ -1159,100 +996,35 @@ html, body {
 }
 
 .welcome-screen__greeting {
-  font-family: var(--font-cjk);
   font-size: clamp(20px, 2vw, 30px);
-  font-weight: 500;
-  color: rgba(235, 245, 248, 0.92);
+  font-weight: 400;
+  color: var(--c-text-mute);
   letter-spacing: 0.55em;
   margin-bottom: 28px;
-  text-shadow: 0 0 18px rgba(0, 200, 200, 0.35);
 }
 
 .welcome-screen__title {
-  font-family: var(--font-cjk);
   font-size: clamp(56px, 7vw, 108px);
-  font-weight: 800;
-  color: rgba(170, 255, 255, 0.96);
-  letter-spacing: 0.08em;
+  font-weight: 600;
+  color: var(--c-text);
+  letter-spacing: 0.04em;
   margin: 0;
   line-height: 1.05;
-  text-shadow:
-    0 0 18px rgba(103, 179, 254, 0.85),
-    0 0 38px rgba(103, 179, 254, 0.55),
-    0 0 80px rgba(0, 180, 200, 0.30);
   display: inline-flex;
   align-items: baseline;
   gap: 4px;
 }
 
 .welcome-screen__brace {
-  color: rgba(180, 245, 255, 0.85);
-  font-weight: 400;
+  color: var(--c-text-dim);
+  font-weight: 300;
 }
 
 .welcome-screen__instruction {
-  font-family: var(--font-cjk);
   font-size: clamp(15px, 1.4vw, 22px);
   font-weight: 400;
-  color: rgba(230, 240, 245, 0.85);
+  color: var(--c-text-mute);
   margin: 36px 0 0;
   line-height: 2;
   letter-spacing: 0.10em;
 }
-
-
-/* Decorative pulsing dots ─────────────────────────────────────────────────── */
-.welcome-screen__dot {
-  position: absolute;
-  z-index: 2;
-  width: 14px; height: 14px;
-  border-radius: 50%;
-  background: var(--c-accent);
-  box-shadow:
-    0 0 20px rgba(103, 179, 254, 0.85),
-    0 0 40px rgba(0, 200, 200, 0.45);
-  animation: welcome-dot-pulse 2.4s ease-in-out infinite;
-}
-
-.welcome-screen__dot::after {
-  content: '';
-  position: absolute;
-  inset: -8px;
-  border-radius: 50%;
-  border: 1.5px solid var(--c-accent);
-  opacity: 0;
-  animation: welcome-dot-ring 2.4s ease-out infinite;
-}
-
-.welcome-screen__dot--top { top: 13%; left: 50%; transform: translateX(-50%); }
-.welcome-screen__dot--bl  { bottom: 18%; left: 32%; }
-.welcome-screen__dot--br  { bottom: 18%; right: 32%; }
-
-@keyframes welcome-dot-pulse {
-  0%, 100% { transform: translateX(var(--tx, 0)) scale(1); }
-  50%       { transform: translateX(var(--tx, 0)) scale(1.18); }
-}
-.welcome-screen__dot--top { --tx: -50%; }
-
-@keyframes welcome-dot-ring {
-  0%   { opacity: 0.55; transform: scale(1); }
-  100% { opacity: 0;    transform: scale(2.6); }
-}
-
-/* Edge circuit traces (decorative) ────────────────────────────────────────── */
-.welcome-screen__circuit {
-  position: absolute;
-  top: 50%;
-  width: 22%;
-  height: 60%;
-  transform: translateY(-50%);
-  fill: none;
-  stroke: rgba(103, 179, 254, 0.45);
-  stroke-width: 1;
-  stroke-linecap: round;
-  filter: drop-shadow(0 0 4px rgba(0, 200, 200, 0.45));
-  opacity: 0.7;
-}
-.welcome-screen__circuit--left  { left: 0; }
-.welcome-screen__circuit--right { right: 0; }
-

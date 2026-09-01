@@ -242,9 +242,7 @@ function IdleView({ wsStatus }) {
   return (
       <div className="device-dash device-dash--idle">
         <h2 className="device-dash__title">
-          <span className="device-dash__title-brace">[</span>
           {isOnline ? '感應 待機 中' : '系統 離線'}
-          <span className="device-dash__title-brace">]</span>
         </h2>
 
         <div className="idle-card">
@@ -276,9 +274,7 @@ function UnknownView({ uid }) {
   return (
       <div className="device-dash device-dash--idle">
         <h2 className="device-dash__title">
-          <span className="device-dash__title-brace">[</span>
           未 知 物 件
-          <span className="device-dash__title-brace">]</span>
         </h2>
         <div className="idle-card">
           <div className="idle-card__title">無對應家電資料</div>
@@ -303,9 +299,7 @@ function DashboardView({ data }) {
       <div className="device-dash">
 
         <h2 className="device-dash__title">
-          <span className="device-dash__title-brace">[</span>
           {data.name}{data.metric}
-          <span className="device-dash__title-brace">]</span>
         </h2>
 
         {/* Today */}
