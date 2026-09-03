@@ -306,3 +306,28 @@ nfc-web-control/
 ├─ start.bat            Windows 一鍵啟動
 └─ README.md
 ```
+
+---
+
+## 三端共用的視覺程式碼（重要）
+
+`src/glow/`（WebGL 發光層）與 `src/shared/` 這兩個資料夾是**從 F-wall 複製過來的**，
+不是這個 repo 自己維護的。`src/style.css` 裡 `GLOW-TOKENS:BEGIN … END` 之間的
+CSS 變數也是產生出來的。
+
+⚠ **不要直接改這些檔案** —— 下次同步會被蓋掉。要改就改 F-wall：
+
+| 要改什麼 | 改哪裡 |
+| --- | --- |
+| 顏色、毛玻璃、彗星參數 | `F-wall/src/config/fx.js` 的 `SHARED` |
+| shader / bloom / 發光層邏輯 | `F-wall/src/glow/` |
+
+改完到 F-wall 跑同步：
+
+```bash
+cd ../F-wall        # 三個專案要並排放
+node sync-tokens.mjs
+```
+
+這樣做（複製而不是 import / submodule）是為了讓每個資料夾都自帶完整程式碼 ——
+單獨複製到展場電腦就能跑，不依賴其他 repo 存在。展場現場不需要跑同步腳本。
