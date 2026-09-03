@@ -116,6 +116,75 @@ function logReaderTable() {
 // session 權威狀態：'welcome' | 'live'。由任一端送 session-start / session-end 驅動。
 let sessionMode = 'welcome';
 
+// ── 鍵盤模擬 NFC（開發用，預設關閉）───────────────────────────────────────────
+//
+//   npm start -- --sim        或   SIM=1 npm start
+//
+// 為什麼做在 server 而不是做在某一端的瀏覽器裡：模擬出來的必須是【真的】
+// tag-present / tag-remove 廣播，三端才會一起亮 —— 那正是要看的東西。
+// 各端自己模擬只會讓那一端亮，看不出同步。
+//
+// ⚠ 現場【不要】帶這個旗標。沒帶就完全不存在，sim-key 訊息會被忽略。
+const SIM = process.argv.includes('--sim') || process.env.SIM === '1';
+let warnedNoSim = false;   // 沒帶 --sim 卻收到 sim-key 時只提醒一次
+
+// 九台的 id 是三端 freeze 過的，順序＝鍵盤 1–9。
+const SIM_IDS = ['hrv', 'ac', 'dehum', 'purifier', 'sensor', 'light', 'socket', 'curtain', 'bathfan'];
+const SIM_LABELS = {
+  hrv: '新風機', ac: '冷氣', dehum: '除濕機', purifier: '空氣清淨機',
+  sensor: '12合一感測器', light: '燈', socket: '智慧插座',
+  curtain: '窗簾', bathfan: '浴室暖風機',
+};
+// uid-map 裡有登記的就沿用真資料（label / description / osc 都一致），
+// 沒登記的（目前有四台）就照同樣的形狀補一份，前端才不會走到 unknown 分支。
+const simCard = (id) => {
+  const hit = Object.entries(uidMap).find(([, v]) => v.id === id);
+  if (hit) return { uid: hit[0], data: hit[1] };
+  return { uid: `SIM-${id.toUpperCase()}`, data: { id, label: SIM_LABELS[id] ?? id, description: '（鍵盤模擬）' } };
+};
+
+function simPlace(i) {
+  const st = slots[i];
+  const { uid, data } = simCard(SIM_IDS[i]);
+  st.lastUid = uid;
+  const event = { type: 'tag-present', slot_index: i, uid, known: true, data };
+  st.currentCard = event;
+  broadcast(event);
+  console.log(`[SIM]  放上 [NFC ${String(i + 1).padStart(2, '0')}] ${data.label}`);
+}
+
+function simRemove(i) {
+  const st = slots[i];
+  st.lastUid = null;
+  st.currentCard = null;
+  broadcast({ type: 'tag-remove', slot_index: i });
+  console.log(`[SIM]  拿走 [NFC ${String(i + 1).padStart(2, '0')}] ${SIM_LABELS[SIM_IDS[i]]}`);
+}
+
+// key: '1'–'9' 切換該台、'0' 全部拿走、'a' 全部放上。
+function simKey(key) {
+  if (!SIM) return;
+  // 還在歡迎頁就先開場 —— 否則按了 1 什麼都不會發生（卡片有進來，但三端還沒切到主畫面），
+  // 預覽時很容易誤以為壞掉。
+  if (sessionMode !== 'live' && key !== '0') {
+    sessionMode = 'live';
+    console.log('[SIM]  自動開場（session-start）');
+    broadcast({ type: 'session-start' });
+  }
+  if (key === '0') {
+    slots.forEach((st, i) => { if (st.currentCard) simRemove(i); });
+    return;
+  }
+  if (key === 'a' || key === 'A') {
+    slots.forEach((st, i) => { if (!st.currentCard) simPlace(i); });
+    return;
+  }
+  const n = parseInt(key, 10);
+  if (!(n >= 1 && n <= SLOT_COUNT)) return;
+  const i = n - 1;
+  if (slots[i].currentCard) simRemove(i); else simPlace(i);
+}
+
 // ── WebSocket server ──────────────────────────────────────────────────────────
 const WS_PORT = 8787;
 const wss = new WebSocket.Server({ port: WS_PORT });
@@ -125,6 +194,39 @@ function broadcast(payload) {
   const msg = JSON.stringify(payload);
   for (const client of wss.clients) {
     if (client.readyState === WebSocket.OPEN) client.send(msg);
+  }
+}
+
+if (SIM) {
+  // 九個虛擬讀卡機直接標成在線 —— 三端的 slot 才會顯示「可放置」而不是離線。
+  // ⚠ 真的讀卡機插上來時 assignSlot() 會看到 slots[i].connected 是 true 而跳過，
+  //    所以 --sim 與真硬體【不要】同時用。
+  slots.forEach((st, i) => { st.connected = true; st.readerName = `SIM-${i}`; });
+  console.log('');
+  console.log('  ╔══════════════════════════════════════════════════════╗');
+  console.log('  ║  鍵盤模擬 NFC 已啟用（--sim）                        ║');
+  console.log('  ║                                                      ║');
+  console.log('  ║   1–9  放上／拿走該台家電                            ║');
+  console.log('  ║   a    全部放上（看「全屋連動完成」）                 ║');
+  console.log('  ║   0    全部拿走                                      ║');
+  console.log('  ║                                                      ║');
+  console.log('  ║  這個視窗可以直接按；三個畫面的視窗也可以直接按，     ║');
+  console.log('  ║  不管在哪按，三端都會同時反應。                       ║');
+  console.log('  ║  ⚠ 現場不要帶 --sim。                                ║');
+  console.log('  ╚══════════════════════════════════════════════════════╝');
+  console.log('');
+  SIM_IDS.forEach((id, i) => console.log(`  ${i + 1} = ${SIM_LABELS[id]}`));
+  console.log('');
+
+  // 終端機直接按鍵（不用切到瀏覽器）。沒有 TTY（被管線接走）時就跳過。
+  if (process.stdin.isTTY) {
+    process.stdin.setRawMode(true);
+    process.stdin.resume();
+    process.stdin.setEncoding('utf8');
+    process.stdin.on('data', (k) => {
+      if (k === '\u0003') { console.log(''); process.exit(0); }   // Ctrl+C
+      simKey(k);
+    });
   }
 }
 
@@ -153,6 +255,18 @@ wss.on('connection', (ws) => {
       sessionMode = msg.type === 'session-start' ? 'live' : 'welcome';
       console.log(`[WS]   Session → ${sessionMode}`);
       broadcast({ type: msg.type });
+    }
+
+    // 任一端的鍵盤 1–9 會送這則過來（見各端的 shared/simKeys.js）。
+    // ⚠ 沒有 --sim 就直接忽略 —— 現場不會因為誰誤按而亮起來。
+    //    但要講一聲，不然「按了沒反應」很難查。
+    if (msg.type === 'sim-key' && typeof msg.key === 'string') {
+      if (SIM) { simKey(msg.key); }
+      else if (!warnedNoSim) {
+        warnedNoSim = true;
+        console.warn('[WS]   收到鍵盤模擬（sim-key）但這個 server 沒帶 --sim，已忽略。');
+        console.warn('[WS]   要用鍵盤模擬 NFC 請改用：  npm run sim');
+      }
     }
   });
 

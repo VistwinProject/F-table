@@ -27,13 +27,50 @@
 
   --ease: cubic-bezier(0.16, 1, 0.3, 1);
 
-  /* 陰影分層 —— 用陰影表達層級，不用發光 */
+  /* 陰影分層 —— 用陰影表達層級 */
   --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.4);
   --shadow-2: 0 8px 32px rgba(0, 0, 0, 0.6);
+
+  /* GLOW-TOKENS:BEGIN — 以下到 END 之間由 F-wall/src/config/fx.js 的 SHARED 產生。
+     ⚠ 不要手改，下次同步會被蓋掉。要調淡藍色／光暈／玻璃濃度，
+        改 SHARED 之後在 /Users/chunming/F 底下跑 `node sync-tokens.mjs`。 */
+  /* ── 光：淡藍發光線段 ── */
+  --wall-bg:          #16181D;
+  --glow:             #A0D8FF;
+  --glow-core:        #DCEFFF;
+  --glow-beam:        #7FE3FF;
+  --glow-deep:        #1B4FA8;
+  --glow-head:        #FFFFFF;
+  --glow-rim:         rgba(220, 239, 255, 0.6);
+  --glow-halo:        rgba(160, 216, 255, 0.42);
+  --glow-dim:         rgba(160, 216, 255, 0.16);
+
+  /* ── 毛玻璃面板 ── */
+  --glass-bg:         rgba(255, 255, 255, 0.11);
+  --glass-bg-2:       rgba(255, 255, 255, 0.055);
+  --glass-blur:       blur(14px) saturate(1.2);
+  --glass-border:     rgba(220, 239, 255, 0.48);
+  --glass-border-2:   rgba(220, 239, 255, 0.2);
+  --glass-border-flat: rgba(255, 255, 255, 0.22);
+  --glass-shadow:
+    0 10px 30px rgba(0, 0, 0, 0.55),
+    0 0 14px rgba(160, 216, 255, 0.336),
+    inset 0 1px 0 rgba(255, 255, 255, 0.42),
+    inset 0 0 12px rgba(255, 255, 255, 0.08);
+  --glass-shadow-2:
+    0 6px 18px rgba(0, 0, 0, 0.45),
+    inset 0 1px 0 rgba(255, 255, 255, 0.16);
+
+  /* ⚠ 走線彗星與光暈濾鏡的 CSS 變數已經拿掉 —— 那些光現在全部由 WebGL 發光層畫，
+     參數在 glow/params.js（同樣由這支腳本從 FX 產生）。 */
+  /* GLOW-TOKENS:END */
 }
 
 [data-theme="dark"] {
-  --c-bg:        #000000;
+  /* ⚠ 與 F-wall 的 styles.css / config/fx.js 的 FX.bg 同值。牆面的毛玻璃與淡藍
+     光暈都是照著這個底調的 —— 換回純黑的話玻璃會退化成一塊平的灰。
+     要退回舊的純黑版，只改這一行 #000000 即可。 */
+  --c-bg:        #16181D;
   --c-surface:   rgba(255, 255, 255, 0.04);
   --c-surface-2: rgba(255, 255, 255, 0.06);
   --c-surface-3: rgba(255, 255, 255, 0.08);
@@ -43,7 +80,8 @@
   --c-text-mute: rgba(255, 255, 255, 0.62);
   --c-text-dim:  rgba(255, 255, 255, 0.38);
   --c-accent:    var(--accent);
-  --frame-border: rgba(255, 255, 255, 0.10);
+  /* 外框＝牆面那圈發光的圓角大框在這一端的等價物（見 .app-frame）。 */
+  --frame-border: rgba(160, 216, 255, 0.34);
 }
 
 /* 淺色是單純的反相版（展場用不到，但 DnaSwitch 還在，別讓它切出破圖） */
@@ -61,7 +99,26 @@
   --frame-border: rgba(0, 0, 0, 0.12);
 }
 
+/* 淺色底沒有「發光」可言：玻璃改成暗色薄膜、光暈全部收掉，
+   只保留淡藍當邊框的色相，這樣切過去不會整片糊掉。
+   ⚠ 這一組是【手寫的覆寫】，不在 sync-tokens.mjs 的產生範圍內 ——
+      深色才是展場實際用的，淺色只是不讓 DnaSwitch 切出破圖。
+      SHARED 如果新增了變數，這裡要不要跟著補要自己判斷。 */
 [data-theme="light"] {
+  --glass-bg:       rgba(0, 0, 0, 0.045);
+  --glass-bg-2:     rgba(0, 0, 0, 0.028);
+  --glass-border:   rgba(40, 90, 140, 0.28);
+  --glass-border-2: rgba(40, 90, 140, 0.14);
+  --glass-shadow:   0 10px 30px rgba(0, 0, 0, 0.10), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  --glass-shadow-2: 0 6px 18px rgba(0, 0, 0, 0.07);
+  --glow:      #3E7FB8;
+  --glow-core: #1D5F98;
+  --glow-beam: #4FA8D8;
+  --glow-rim:  rgba(40, 90, 140, 0.45);
+  --glow-halo: rgba(40, 90, 140, 0.18);
+  --glow-dim:  rgba(40, 90, 140, 0.14);
+  --glow-filter: none;
+
   --accent:      rgba(0, 0, 0, 0.85);
   --accent-2:    rgba(0, 0, 0, 0.60);
   --accent-deep: rgba(0, 0, 0, 0.38);
@@ -94,6 +151,8 @@ html, body {
 #root { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; }
 
 /* ── Outer frame ─────────────────────────────────────────────────────────────── */
+/* ⚠ overflow: hidden 只裁子元素，不裁自己的 box-shadow，所以外暈照樣看得到。
+   內暈用 inset，讓光沿著整圈框往內散一點 —— 等同牆面 FX.frame 的 soft 那一層。 */
 .app-frame {
   position: relative;
   width: calc(100vw - 16px);
@@ -104,6 +163,9 @@ html, body {
   background: var(--c-bg);
   display: flex;
   flex-direction: column;
+  box-shadow:
+    0 0 18px rgba(160, 216, 255, 0.26),
+    inset 0 0 26px rgba(160, 216, 255, 0.05);
 }
 
 .frame-footer {
@@ -131,7 +193,8 @@ html, body {
   width: 32px;
   height: 2px;
   border-radius: 1px;
-  background: var(--c-border-2);
+  background: var(--glow);
+  box-shadow: 0 0 8px rgba(160, 216, 255, 0.55);
 }
 
 /* ── App body layout ─────────────────────────────────────────────────────────── */
@@ -155,7 +218,7 @@ html, body {
   height: 40px;
   min-height: 40px;
   background: transparent;
-  border-bottom: 1px solid var(--c-border);
+  border-bottom: 1px solid var(--glow-dim);
   flex-shrink: 0;
   z-index: 10;
   position: relative;
@@ -236,12 +299,15 @@ html, body {
   max-width: 540px;
   flex-shrink: 0;
   height: 100%;
-  /* 毛玻璃保留 —— 那本來就是 Apple 語言，不是舊 HUD 的東西 */
-  background: var(--c-surface);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid var(--c-border);
+  /* 毛玻璃＝牆面 .panel-glass + .panel-glass-rim 的值（見 :root 的 --glass-*）。
+     ⚠ 底從 4% 提到 11%：牆面當初就是為了「背後有亮線要吃掉」才用 11%，
+        這一端背後是中樞的淡藍連線，同樣的理由。 */
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
   border-radius: 18px;
+  box-shadow: var(--glass-shadow);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -268,6 +334,19 @@ html, body {
 }
 
 /* ── SVG connection lines ────────────────────────────────────────────────────── */
+/* ── WebGL 發光層 ────────────────────────────────────────────────────────────
+   牆面那套（Three.js + UnrealBloomPass）的桌面版，程式在 glow/。
+   ⚠ 疊在 hub-container 的最底層：3D 模型(1)、slot(2)、連線 SVG(3) 都在它之上。
+      canvas 只負責「光」，銳利的東西不要進來 —— 與牆面同一個分層原則。 */
+.glow-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* ⚠ 這裡【不要】再掛 drop-shadow 光暈 —— 光已經由 WebGL 的 bloom 畫了。
+   兩套並存會變成「兩種不同的光」，而且每幀重算整張 SVG 濾鏡很貴。 */
 .connections {
   position: absolute;
   inset: 0;
@@ -280,31 +359,24 @@ html, body {
 
 /* ── Beams：中樞 ↔ slot 的連線 ────────────────────────────────────────────────
    端點座標由 App.jsx 的 slotPos / INSET_RATIO 算出（那是版面邏輯，不要動）。
-   極簡版只留兩階：idle 極細灰線、active 白高光。
-   舊版的 halo / core 雙層、三段掃描光與發光濾鏡全部拿掉 —— 只留進出場淡入。 */
+   ⚠ 有卡時的「光」（亮芯、光暈、彗星拖尾、底光呼吸）全部由 WebGL 發光層畫，
+      不在這裡 —— 見 glow/，與牆面同一組 shader、同一顆 bloom。
+      這條 SVG 線只剩兩個用途：沒感應時的細灰線，以及 WebGL 起不來時的 fallback。
+   ⚠ 單位是 px（viewBox = 容器 px 尺寸）。 */
 .beam-halo {
   fill: none;
   stroke-linecap: round;
-  stroke: var(--c-border);
-  stroke-width: 1;
-  transition: stroke-width 0.28s var(--ease), stroke 0.28s var(--ease);
-}
-.beam-halo--active {
-  stroke: var(--accent);
+  stroke: var(--glow-dim);
   stroke-width: 1.5;
+  transition: stroke 0.28s var(--ease), opacity 0.28s var(--ease);
 }
+/* active 時退到幾乎看不見：在 bloom 的柔邊上再壓一條實心線會切出一道硬芯。 */
+.beam-halo--active { opacity: 0.25; }
 
-/* core 疊在 halo 上，極簡版讓它完全透明 —— 保留選擇器是因為 JSX 還在畫這條線，
-   之後若要把「雙層線」加回來，改這裡就好，不用動 App.jsx 的幾何。 */
-.beam-core {
-  fill: none;
-  stroke: transparent;
-  stroke-width: 0;
-}
-.beam-core--active {
-  stroke: transparent;
-  stroke-width: 0;
-}
+/* ⚠ 彗星拖尾與底光呼吸已經全部搬進 WebGL 發光層（glow/）——
+   CSS 版的 .ct-* / .beam-comet / beam-breathe 都拿掉了。
+   兩套並存的話畫面上會同時有 bloom 的光與 drop-shadow 的光，那是兩種質感。 */
+
 
 /* 掃描光段：極簡版不顯示（循環動畫全部移除） */
 .beam-sweep,
@@ -326,18 +398,27 @@ html, body {
   height: 280px;
   transform: translate(-50%, -50%);
   pointer-events: none;
-  color: var(--c-border-2);
+  /* 核心框：與牆面的 FX.frame.hubIdle = 0 同一條規則 —— 沒卡時幾乎不發光，
+     有任何一張卡就亮成淡藍。 */
+  color: var(--glow-dim);
   transition: color 0.28s var(--ease);
 }
 
-.center-hub--active { color: var(--accent); }
+.center-hub--active { color: var(--glow); }
 
+/* ⚠ 光暈掛在 SVG 這一層，不要掛到外層 .center-hub —— 那個 div 還包著 .hub-label，
+   整塊套 drop-shadow 會連文字一起糊。 */
 .center-hub__svg {
   width: 100%;
   height: 100%;
   overflow: visible;
   display: block;
+  filter: none;
+  transition: filter 0.28s var(--ease);
 }
+
+/* ⚠ 光暈交給 WebGL 發光層，這裡不再掛 drop-shadow。 */
+.center-hub--active .center-hub__svg { filter: none; }
 
 .center-hub--disconnected .center-hub__svg { opacity: 0.45; }
 
@@ -375,7 +456,7 @@ html, body {
 .slot-outer {
   width: 86px; height: 86px;
   border-radius: 50%;
-  border: 1px solid var(--c-border);
+  border: 1px solid var(--glow-dim);
   background: transparent;
   display: flex;
   align-items: center;
@@ -427,15 +508,19 @@ html, body {
 }
 
 /* ── Connected（讀卡機在線、還沒放卡）── */
-.nfc-slot.connected .slot-outer      { border-color: var(--c-border-2); }
+.nfc-slot.connected .slot-outer      { border-color: rgba(160, 216, 255, 0.34); }
 .nfc-slot.connected .slot-plus       { color: var(--c-text-mute); }
 .nfc-slot.connected .slot-index-small { color: var(--c-text-mute); }
 .nfc-slot.connected .slot-label      { color: var(--c-text-mute); }
 
-/* ── Active（卡片在上面）：純白高光 + 微透明底 ── */
+/* ── Active（卡片在上面）：淡藍高光環 + 微透明底 ──
+   = 牆面家電框 active（FX.frame.blockOn）的等價物：亮邊 + 外暈 + 一點內霧光。 */
+/* ⚠ 外圈的光暈交給 WebGL 發光層（同一組 shader、同一顆 bloom）。
+   這裡只留銳利的部分：邊框亮起來 + 微透明底 + 一點內霧光。 */
 .nfc-slot.active .slot-outer {
-  border-color: var(--accent);
-  background: var(--c-surface-3);
+  border-color: var(--glow-rim);
+  background: rgba(160, 216, 255, 0.07);
+  box-shadow: inset 0 0 12px rgba(160, 216, 255, 0.14);
 }
 .nfc-slot.active .slot-plus        { color: var(--c-text); }
 .nfc-slot.active .slot-index-small { color: var(--c-text); }
@@ -443,7 +528,9 @@ html, body {
 
 /* ── Focused（資訊面板正在顯示這一張）：多一層陰影拉開層級，不用顏色 ── */
 .nfc-slot.focused .slot-outer {
-  box-shadow: var(--shadow-2);
+  box-shadow:
+    inset 0 0 14px rgba(160, 216, 255, 0.18),
+    var(--shadow-2);
 }
 
 /* ── WS offline badge ────────────────────────────────────────────────────────── */
@@ -451,121 +538,15 @@ html, body {
   position: absolute;
   bottom: 28px;
   right: 22px;
-  background: var(--c-surface-2);
-  border: 1px solid var(--c-border-2);
+  background: var(--glass-bg-2);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border-2);
   border-radius: 6px;
   padding: 7px 14px;
   font-family: var(--font-hud);
   font-size: 16px;
   letter-spacing: 0.12em;
-  color: var(--red);
-  pointer-events: none;
-}
-
-/* ── 3DGS viewer floating above a slot ───────────────────────────────────────── */
-/* Positioned in hub-container coords: (x%, y%) = slot circle center.
-   translate(-50%, calc(-100% - 65px)) centers horizontally and floats
-   the overlay so its bottom edge is 65px above the slot circle center. */
-.slot-model-overlay {
-  position: absolute;
-  width: 160px;
-  height: 250px;
-  transform: translate(-50%, -50%);
-  z-index: 1;
-  pointer-events: none;
-  display: flex;
-  flex-direction: column;
-  animation: slot-model-in 0.5s var(--ease) both;
-}
-
-@keyframes slot-model-in {
-  from { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
-  to   { opacity: 1; transform: translate(-50%, -50%) scale(1); }
-}
-
-/* transparent canvas — no background clipping */
-.slot-model-overlay .gaussian-wrap,
-.slot-model-overlay .gaussian-canvas,
-.slot-model-overlay .gaussian-canvas canvas {
-  background: transparent !important;
-}
-
-/* loading dots sized for small viewer */
-.slot-model-overlay .gaussian-loading { gap: 5px; }
-.slot-model-overlay .gaussian-loading__dot { width: 4px; height: 4px; }
-.slot-model-overlay .gaussian-loading__text { font-size: 10px; letter-spacing: 0.16em; }
-
-
-/* ── Gaussian viewer wrapper ─────────────────────────────────────────────────── */
-.gaussian-wrap {
-  flex: 1;
-  position: relative;
-  overflow: hidden;
-}
-
-.gaussian-canvas {
-  width: 100%;
-  height: 100%;
-  opacity: 0;
-  transition: opacity 0.4s ease;
-}
-
-.gaussian-canvas--ready {
-  opacity: 1;
-}
-
-.gaussian-canvas canvas {
-  display: block;
-  width: 100% !important;
-  height: 100% !important;
-}
-
-.gaussian-loading {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 16px;
-  pointer-events: none;
-}
-
-.gaussian-loading__dot {
-  display: inline-block;
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--c-accent);
-  animation: gs-pulse 1.2s ease-in-out infinite;
-}
-
-.gaussian-loading__dot:nth-child(1) { animation-delay: 0s; }
-.gaussian-loading__dot:nth-child(2) { animation-delay: 0.2s; }
-.gaussian-loading__dot:nth-child(3) { animation-delay: 0.4s; }
-
-@keyframes gs-pulse {
-  0%, 80%, 100% { transform: scale(0.6); opacity: 0.3; }
-  40%           { transform: scale(1.0); opacity: 1; }
-}
-
-.gaussian-loading__text {
-  font-family: var(--font-hud);
-  font-size: 15px;
-  letter-spacing: 0.28em;
-  color: var(--c-text-dim);
-  text-transform: uppercase;
-}
-
-.gaussian-error {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-family: var(--font-hud);
-  font-size: 16px;
-  letter-spacing: 0.18em;
   color: var(--red);
   pointer-events: none;
 }
@@ -606,10 +587,12 @@ html, body {
 }
 
 /* ── Idle card (請將物件放上感應區) ── */
+/* 面板【內】的卡片一律只取玻璃的次層值，不再疊一次外緣光暈 ——
+   兩層都發光的話面板會整片糊掉（牆面同理，一塊玻璃只有一圈 rim）。 */
 .idle-card {
   margin-top: 10vh;
-  background: rgba(255, 255, 255, 0.025);
-  border: 1px solid rgba(255, 255, 255, 0.10);
+  background: var(--glass-bg-2);
+  border: 1px solid var(--glass-border-2);
   border-radius: 14px;
   padding: 28px 20px;
   display: flex;
@@ -629,7 +612,8 @@ html, body {
 .idle-card__pulse span {
   width: 6px; height: 6px;
   border-radius: 50%;
-  background: var(--c-text);
+  background: var(--glow);
+  box-shadow: 0 0 7px rgba(160, 216, 255, 0.5);
 }
 .idle-card__pulse span:nth-child(1) { opacity: 0.85; }
 .idle-card__pulse span:nth-child(2) { opacity: 0.55; }
@@ -667,8 +651,8 @@ html, body {
   flex-direction: column;
   gap: 6px;
   padding: 14px 16px;
-  background: rgba(255, 255, 255, 0.018);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--glass-bg-2);
+  border: 1px solid var(--glass-border-2);
   border-radius: 12px;
 }
 .idle-foot__row {
@@ -698,8 +682,8 @@ html, body {
 }
 /* ── Card (re-used by every dashboard section) ── */
 .device-card {
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: var(--glass-bg-2);
+  border: 1px solid var(--glass-border-2);
   border-radius: 14px;
   padding: 17px 19px;
   display: flex;
@@ -777,8 +761,8 @@ html, body {
 /* ── Range tabs (日/週/月/年) ── */
 .range-tabs {
   display: inline-flex;
-  background: rgba(255, 255, 255, 0.025);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--glass-bg-2);
+  border: 1px solid var(--glass-border-2);
   border-radius: 8px;
   padding: 2px;
   gap: 1px;
@@ -830,18 +814,20 @@ html, body {
   align-items: flex-end;
   gap: 2px;
   padding: 0 2px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  border-bottom: 1px solid rgba(160, 216, 255, 0.16);
   background-image:
-    linear-gradient(to top, transparent calc(20% - 0.5px), rgba(255,255,255,0.04) 20%, transparent calc(20% + 0.5px)),
-    linear-gradient(to top, transparent calc(40% - 0.5px), rgba(255,255,255,0.04) 40%, transparent calc(40% + 0.5px)),
-    linear-gradient(to top, transparent calc(60% - 0.5px), rgba(255,255,255,0.04) 60%, transparent calc(60% + 0.5px)),
-    linear-gradient(to top, transparent calc(80% - 0.5px), rgba(255,255,255,0.04) 80%, transparent calc(80% + 0.5px));
+    linear-gradient(to top, transparent calc(20% - 0.5px), rgba(160,216,255,0.08) 20%, transparent calc(20% + 0.5px)),
+    linear-gradient(to top, transparent calc(40% - 0.5px), rgba(160,216,255,0.08) 40%, transparent calc(40% + 0.5px)),
+    linear-gradient(to top, transparent calc(60% - 0.5px), rgba(160,216,255,0.08) 60%, transparent calc(60% + 0.5px)),
+    linear-gradient(to top, transparent calc(80% - 0.5px), rgba(160,216,255,0.08) 80%, transparent calc(80% + 0.5px));
 }
+/* 長條＝走線光束的截面：底部深藍 → 頂部亮芯，三階與 FX.color 的 tail/body/head 同源。
+   ⚠ 不要在每根長條上加 box-shadow —— 日檢視有 30 根，那是 30 個 blur 圖層。 */
 .trend-chart__bar {
   flex: 1;
   min-width: 3px;
   border-radius: 2px 2px 0 0;
-  background: rgba(255, 255, 255, 0.72);
+  background: linear-gradient(to top, rgba(27, 79, 168, 0.55), var(--glow-beam) 70%, var(--glow-core));
   transition: height 0.4s var(--ease);
 }
 .trend-chart__xaxis {
@@ -885,7 +871,8 @@ html, body {
 }
 .cumulative__fill {
   height: 100%;
-  background: rgba(255, 255, 255, 0.85);
+  background: linear-gradient(90deg, var(--glow-beam), var(--glow-core));
+  box-shadow: 0 0 10px rgba(160, 216, 255, 0.5);
   border-radius: 3px;
   transition: width 0.6s var(--ease);
 }
@@ -927,7 +914,7 @@ html, body {
   font-weight: 500;
   letter-spacing: 0.04em;
   padding-bottom: 8px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.14);
+  border-bottom: 1px solid rgba(160, 216, 255, 0.22);
 }
 .maint-row__icon {
   display: flex;

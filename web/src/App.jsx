@@ -1,11 +1,13 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import InfoPanel from './components/InfoPanel.jsx'
 import CenterHub from './components/CenterHub.jsx'
 import NfcSlot from './components/NfcSlot.jsx'
 import ConnectionStatus from './components/ConnectionStatus.jsx'
 import StudioHeader from './components/StudioHeader.jsx'
-import GaussianViewer from './components/GaussianViewer.jsx'
 import WelcomeScreen from './components/WelcomeScreen.jsx'
+import GlowLayer from './glow/GlowLayer.jsx'
+import { circlePoints } from './glow/ribbon.js'
+import { attachSimKeys } from './shared/simKeys.js'
 
 const WS_URL       = 'ws://localhost:8787'
 const RECONNECT_MS = 3000
@@ -125,9 +127,6 @@ export default function App() {
           if (idx !== null) {
             patchSlot(idx, { activeCard: { uid: msg.uid, known: msg.known, data: msg.data } })
             setFocusedIdx(idx)
-            setTotalInteractions(n => n + 1)
-            // Pre-fetch model into browser cache so subsequent taps load instantly
-            if (msg.data?.model) fetch(msg.data.model, { priority: 'low' }).catch(() => {})
           }
           break
 
@@ -168,7 +167,9 @@ export default function App() {
 
   useEffect(() => {
     connect()
-    return () => { clearTimeout(timerRef.current); wsRef.current?.close() }
+    // ?sim：鍵盤 1–9 送給 server，由它廣播真的 tag-present → 三端一起亮。
+    const detachSim = attachSimKeys(() => wsRef.current)
+    return () => { detachSim(); clearTimeout(timerRef.current); wsRef.current?.close() }
   }, [connect])
 
   // ── InfoPanel focus rotation ────────────────────────────────────────────────
@@ -207,18 +208,69 @@ export default function App() {
   const activeCount    = slotStates.filter(s => s.activeCard !== null).length
   const focusedState   = focusedIdx !== null ? slotStates[focusedIdx] : null
 
+  // ── 發光層 ────────────────────────────────────────────────────────────────
+  const hubRef = useRef(null)
+
+  // 哪些東西要亮：有卡的 slot（連線 + 圓環）＋ 有任何一張卡時的中樞環。
+  // ⚠ 用 useMemo 並且只依賴「亮起來的 slot 清單」，不要每次 render 都給新的 Set ——
+  //    GlowLayer 是拿它當 ref 讀，但重建成本白花。
+  const activeKey = slotStates.map(s => (s.activeCard ? 1 : 0)).join('')
+  const glowActive = useMemo(() => {
+    const ids = new Set()
+    slotStates.forEach((s, i) => { if (s.activeCard) { ids.add(`beam-${i}`); ids.add(`ring-${i}`) } })
+    if (slotStates.some(s => s.activeCard)) ids.add('core')
+    return ids
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeKey])
+
+  // 幾何。⚠ 這裡的 % → 世界座標換算必須與 ConnectionLines / .nfc-slot / .center-hub
+  //    的 CSS 定位用同一組數字（slotPos、HUB_X/Y、86px、280px），否則光會偏掉。
+  const buildGlow = useCallback((world, px) => {
+    const toW = (xPct, yPct) => ({ x: (xPct / 100) * world.w, y: (yPct / 100) * world.h })
+    const s = world.w / (px.width || world.w)   // CSS px → 世界單位
+    const hub = toW(HUB_X, HUB_Y)
+
+    const beams = []
+    const lines = []
+    SLOTS.forEach((slot) => {
+      const pos = slotPos(slot.slotIndex, SLOTS.length)
+      const sp = toW(pos.x, pos.y)
+      const dx = sp.x - hub.x
+      const dy = sp.y - hub.y
+      const dist = Math.hypot(dx, dy) || 1
+      const ux = dx / dist
+      const uy = dy / dist
+      // 端點讓開中樞與圓環，跟 ConnectionLines 的 HUB_CLEAR_PX / SLOT_CLEAR_PX 同一組值。
+      const h = { x: hub.x + HUB_CLEAR_PX * s * ux, y: hub.y + HUB_CLEAR_PX * s * uy }
+      const e = { x: sp.x - SLOT_CLEAR_PX * s * ux, y: sp.y - SLOT_CLEAR_PX * s * uy }
+      // ⚠ 順序＝流動方向：卡片 → 中樞，與牆面的走線同向（資料流進 AI 大腦）。
+      beams.push({ id: `beam-${slot.slotIndex}`, pts: [e, h] })
+      lines.push({ id: `ring-${slot.slotIndex}`, pts: circlePoints(sp.x, sp.y, 43 * s), closed: true })
+    })
+    // 中樞環：CenterHub 的 SVG 是 viewBox 240 裡半徑 116，元素本身 280px → 半徑 135.3px。
+    lines.push({ id: 'core', pts: circlePoints(hub.x, hub.y, (280 / 2) * (116 / 120) * s), closed: true })
+    return { lines, beams }
+  }, [])
+
   return (
     <div className="app-frame">
       <StudioHeader theme={theme} onThemeToggle={handleThemeToggle} />
 
       <div className="app-body">
-        {/* InfoPanel 只用這兩個 prop（見其 signature）。舊版還傳了
-            focusedSlot / activeCount / connectedCount / activityLog /
-            totalInteractions，全部沒有被解構，已一併移除。 */}
+        {/* InfoPanel 只用這兩個 prop（見其 signature）。 */}
         <InfoPanel wsStatus={wsStatus} focusedState={focusedState} />
 
         <main className="main">
-          <div className="hub-container">
+          <div className="hub-container" ref={hubRef}>
+            {/* 發光層：牆面那套 WebGL + UnrealBloomPass，畫連線的光與彗星、
+                slot 圓環與中樞環的外圈。⚠ 疊在最底層，銳利的東西（+ 號、標籤、
+                毛玻璃面板）全部在它之上 —— 與牆面同一個分層原則。 */}
+            <GlowLayer
+              containerRef={hubRef}
+              build={buildGlow}
+              activeIds={glowActive}
+              className="glow-layer"
+            />
             <ConnectionLines slots={SLOTS} slotStates={slotStates} />
 
             {SLOTS.map((slot) => {
@@ -235,24 +287,6 @@ export default function App() {
                   focused={focusedIdx === slot.slotIndex}
                   onClick={() => setFocusedIdx(slot.slotIndex)}
                 />
-              )
-            })}
-
-            {/* Model overlays — rendered in hub-container so positioning is unaffected
-                by the nfc-slot's translate(-50%,-50%) transform */}
-            {SLOTS.map((slot) => {
-              const state     = slotStates[slot.slotIndex]
-              const modelPath = state.activeCard?.data?.model
-              if (!modelPath) return null
-              const pos = slotPos(slot.slotIndex, SLOTS.length)
-              return (
-                <div
-                  key={`model-${slot.id}`}
-                  className="slot-model-overlay"
-                  style={{ left: `${pos.x}%`, top: `${pos.y}%` }}
-                >
-                  <GaussianViewer key={state.activeCard.uid} modelPath={modelPath} />
-                </div>
               )
             })}
 
@@ -370,22 +404,16 @@ function ConnectionLines({ slots, slotStates }) {
 
         const state    = slotStates[slot.slotIndex]
         const isActive = state.activeCard !== null
-        // 連線只有兩種樣子：active 與其他。「讀卡機在線但沒卡」是由 NfcSlot 的
-        // 圓環轉實線表示，不由連線表示 —— 所以那種狀態的線跟沒讀卡機時一樣安靜。
-        const stateSuffix = isActive ? '--active' : ''
-
         return (
           <g key={slot.id}>
-            {/* 連線本體：idle 極細灰線 → active 白高光（樣式全在 CSS 的 .beam-halo）。
-                舊版的高斯模糊光暈與三段掃描光已移除。 */}
+            {/* ⚠ 現在這裡【只畫沒感應時的那條細灰線】。
+                有卡的時候「光」全部由發光層（WebGL + bloom）畫 —— 亮芯、光暈、
+                彗星拖尾、底光呼吸都在 glow/ 裡，與牆面同一組 shader。
+                這條 SVG 線在 active 時仍留著但幾乎看不見（被上面的光蓋掉），
+                保留它是為了 WebGL 起不來時仍有連線可看（見 GlowLayer 的 catch）。 */}
             <line
               x1={hx} y1={hy} x2={sx} y2={sy}
-              className={`beam-halo${stateSuffix && ' beam-halo' + stateSuffix}`}
-            />
-            {/* core 疊層保留掛點但目前 CSS 設為透明，之後要做雙層線不用再動這裡的幾何 */}
-            <line
-              x1={hx} y1={hy} x2={sx} y2={sy}
-              className={`beam-core${stateSuffix && ' beam-core' + stateSuffix}`}
+              className={`beam-halo${isActive ? ' beam-halo--active' : ''}`}
             />
           </g>
         )
