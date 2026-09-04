@@ -67,8 +67,11 @@ export const DEFAULTS = {
     // 變寬就把色團拉成橢圓。
     spread: 62,
     strength: 0.45, // 整體不透明度。顏色本身只管色相，濃淡一律由這個調
-    drift: 2.6,     // 晃動幅度（容器 %）。「稍微晃動」，不是飄來飄去
-    speed: 1,       // 晃動速度倍率。1 = 每個點約 26～38 秒繞一圈
+    // 晃動幅度，單位 vmin（＝容器短邊的 %）。要讓背景讀得出「在流動」，
+    // 2～3 太小 —— 那個幅度在 1080 高上只有 ±30px，看起來是靜止的。
+    // 9 = ±97px（1080p），一來一回約 190px，是「在流動」而不是「在飄」。
+    drift: 9,
+    speed: 1.4,     // 晃動速度倍率。1 = 每個點約 26～38 秒繞一圈
     // 預設走冷色，與這一端的淡藍走線同一家人；刻意壓得很暗 ——
     // 目的是「讓底不要死板」，不是「把背景變成主角」。
     // ⚠ 點位刻意避開左側面板（它大約佔畫面 x 的 1.5%～30%）。面板是毛玻璃，
@@ -163,10 +166,15 @@ export const panelPct = () => TUNING.panelPct
 /** 背景漸層：{ on, spread, strength, drift, speed, points[] }。 */
 export const bgConf = () => TUNING.bg
 
-// 連線兩端要讓開的距離（px）。⚠ 一定要跟著圓圈大小走 ——
-// 寫死的話圓圈調大之後，線就會從圓圈裡面長出來。
-export const slotClear = () => slotSize() / 2 + 7
-export const hubClear = () => hubSize() / 2 + 15
+// 連線兩端要讓開的距離（px）＝【圓圈的可見半徑】，所以線正好從感應圈的邊緣
+// 拉到中樞圈的邊緣，兩端都貼齊、沒有多餘的間隙。
+// ⚠ 一定要跟著圓圈大小走 —— 寫死的話圓圈調大之後線會從圓圈裡面長出來。
+export const slotClear = () => slotSize() / 2
+// ⚠ 中樞不是 hubSize/2：CenterHub 的 SVG 是 viewBox 240 裡半徑 116 的圓，
+//   元素本身才是 hubSize，所以【畫出來】的圓半徑是 hubSize/2 × 116/120。
+//   用 hubSize/2 的話線會停在圓環外面約 4%，看起來就是沒接上。
+export const HUB_CIRCLE_RATIO = 116 / 120
+export const hubClear = () => (hubSize() / 2) * HUB_CIRCLE_RATIO
 
 // ── 匯出（貼回程式碼）───────────────────────────────────────────────────────
 const r1 = (n) => Math.round(n * 10) / 10

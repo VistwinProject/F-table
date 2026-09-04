@@ -254,8 +254,10 @@ export default function TableEditor({ onClose, hubRef }) {
                     onChange={(e) => setBg({ strength: parseFloat(e.target.value) })} />
                 </label>
                 <label className="te-slider">
-                  <span>晃動幅度 {r1(bg.drift)}</span>
-                  <input type="range" min="0" max="12" step="0.2" value={bg.drift}
+                  {/* 單位是 vmin＝容器短邊的 %，不是像素也不是色團的 % ——
+                      見 MeshBackground 裡那段說明。 */}
+                  <span>晃動幅度 {r1(bg.drift)} vmin</span>
+                  <input type="range" min="0" max="30" step="0.5" value={bg.drift}
                     onChange={(e) => setBg({ drift: parseFloat(e.target.value) })} />
                 </label>
                 <label className="te-slider">

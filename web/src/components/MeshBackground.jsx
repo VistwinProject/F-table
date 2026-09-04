@@ -52,7 +52,11 @@ export default function MeshBackground({ frozen = false }) {
         // 兩個不同週期的正弦 = 一個緩慢的李薩如軌跡，比正圓自然
         const dx = Math.cos((t * 2 * Math.PI) / o.px + o.phase) * drift
         const dy = Math.sin((t * 2 * Math.PI) / o.py + o.phase * 1.7) * drift
-        els[i].style.transform = `translate(calc(-50% + ${dx.toFixed(3)}%), calc(-50% + ${dy.toFixed(3)}%))`
+        // ⚠ 位移的單位是 vmin，不是 %。translate 的百分比是相對【元素自己】的
+        //   尺寸，用 % 的話「晃動幅度」會跟著擴散半徑一起變 —— 調大色團就會
+        //   連帶晃得更遠，那不是這支滑桿該有的意思。vmin 與色團尺寸同一個基準
+        //   （容器短邊），1vmin = 短邊的 1%，滑桿上的數字才說得通。
+        els[i].style.transform = `translate(calc(-50% + ${dx.toFixed(3)}vmin), calc(-50% + ${dy.toFixed(3)}vmin))`
       }
       raf = requestAnimationFrame(tick)
     }

@@ -233,7 +233,7 @@ export default function App() {
       const dist = Math.hypot(dx, dy) || 1
       const ux = dx / dist
       const uy = dy / dist
-      // 端點讓開中樞與圓環 —— 與 ConnectionLines 讀的是同兩個函式。
+      // 端點＝感應圈邊緣 → 中樞圈邊緣，兩端都貼齊。與 ConnectionLines 讀的是同兩個函式。
       const h = { x: hub.x + hubClear() * s * ux, y: hub.y + hubClear() * s * uy }
       const e = { x: sp.x - slotClear() * s * ux, y: sp.y - slotClear() * s * uy }
       // ⚠ 順序＝流動方向：卡片 → 中樞，與牆面的走線同向（資料流進 AI 大腦）。
