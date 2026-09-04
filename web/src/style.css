@@ -66,6 +66,10 @@
   /* GLOW-TOKENS:END */
 }
 
+/* ⚠ 只剩深色。原本還有一組 [data-theme="light"] 與右上角的 DnaSwitch 切換，
+   已經移除 —— 展場的桌面是投影，只會用深色，那顆開關擺著只會被誤觸。
+   選擇器保留 [data-theme="dark"] 而不攤平到 :root：index.html 的 <html> 上就寫著
+   data-theme="dark"，攤平的話那個屬性會變成沒有意義的殘留。 */
 [data-theme="dark"] {
   /* ⚠ 與 F-wall 的 styles.css / config/fx.js 的 FX.bg 同值。牆面的毛玻璃與淡藍
      光暈都是照著這個底調的 —— 換回純黑的話玻璃會退化成一塊平的灰。
@@ -82,53 +86,6 @@
   --c-accent:    var(--accent);
   /* 外框＝牆面那圈發光的圓角大框在這一端的等價物（見 .app-frame）。 */
   --frame-border: rgba(160, 216, 255, 0.34);
-}
-
-/* 淺色是單純的反相版（展場用不到，但 DnaSwitch 還在，別讓它切出破圖） */
-[data-theme="light"] {
-  --c-bg:        #ffffff;
-  --c-surface:   rgba(0, 0, 0, 0.03);
-  --c-surface-2: rgba(0, 0, 0, 0.05);
-  --c-surface-3: rgba(0, 0, 0, 0.07);
-  --c-border:    rgba(0, 0, 0, 0.10);
-  --c-border-2:  rgba(0, 0, 0, 0.22);
-  --c-text:      rgba(0, 0, 0, 0.92);
-  --c-text-mute: rgba(0, 0, 0, 0.60);
-  --c-text-dim:  rgba(0, 0, 0, 0.38);
-  --c-accent:    rgba(0, 0, 0, 0.85);
-  --frame-border: rgba(0, 0, 0, 0.12);
-}
-
-/* 淺色底沒有「發光」可言：玻璃改成暗色薄膜、光暈全部收掉，
-   只保留淡藍當邊框的色相，這樣切過去不會整片糊掉。
-   ⚠ 這一組是【手寫的覆寫】，不在 sync-tokens.mjs 的產生範圍內 ——
-      深色才是展場實際用的，淺色只是不讓 DnaSwitch 切出破圖。
-      SHARED 如果新增了變數，這裡要不要跟著補要自己判斷。 */
-[data-theme="light"] {
-  --glass-bg:       rgba(0, 0, 0, 0.045);
-  --glass-bg-2:     rgba(0, 0, 0, 0.028);
-  --glass-border:   rgba(40, 90, 140, 0.28);
-  --glass-border-2: rgba(40, 90, 140, 0.14);
-  --glass-shadow:   0 10px 30px rgba(0, 0, 0, 0.10), inset 0 1px 0 rgba(255, 255, 255, 0.6);
-  --glass-shadow-2: 0 6px 18px rgba(0, 0, 0, 0.07);
-  --glow:      #3E7FB8;
-  --glow-core: #1D5F98;
-  --glow-beam: #4FA8D8;
-  --glow-rim:  rgba(40, 90, 140, 0.45);
-  --glow-halo: rgba(40, 90, 140, 0.18);
-  --glow-dim:  rgba(40, 90, 140, 0.14);
-  --glow-filter: none;
-
-  --accent:      rgba(0, 0, 0, 0.85);
-  --accent-2:    rgba(0, 0, 0, 0.60);
-  --accent-deep: rgba(0, 0, 0, 0.38);
-  --accent-dim:  rgba(0, 0, 0, 0.06);
-  --accent-glow: rgba(0, 0, 0, 0.10);
-  --accent-ring: rgba(0, 0, 0, 0.20);
-  --green: rgba(0, 0, 0, 0.92);
-  --red:   rgba(0, 0, 0, 0.60);
-  --amber: rgba(0, 0, 0, 0.60);
-  --blue:  rgba(0, 0, 0, 0.85);
 }
 
 /* ── Reset ───────────────────────────────────────────────────────────────────── */
@@ -250,53 +207,13 @@ html, body {
 .studio-header__demo  { margin-left: 4px; }
 .studio-header__phase { margin-left: 2px; }
 
-.studio-header__right {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-
-/* ── DnaSwitch ───────────────────────────────────────────────────────────────── */
-.dna-switch { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; user-select: none; }
-.dna-switch__input { display: none; }
-
-.dna-switch__track {
-  position: relative;
-  width: 32px; height: 18px;
-  border-radius: 9px;
-  background: var(--c-surface-3);
-  border: 1px solid var(--c-border-2);
-  transition: background 0.22s var(--ease), border-color 0.22s var(--ease);
-}
-.dna-switch__input:checked + .dna-switch__track {
-  background: var(--accent-dim);
-  border-color: var(--c-accent);
-}
-.dna-switch__thumb {
-  position: absolute;
-  top: 2px; left: 2px;
-  width: 12px; height: 12px;
-  border-radius: 50%;
-  background: var(--c-text-dim);
-  transition: transform 0.22s var(--ease), background 0.22s var(--ease);
-}
-.dna-switch__input:checked + .dna-switch__track .dna-switch__thumb {
-  transform: translateX(14px);
-  background: var(--c-accent);
-}
-.dna-switch__label {
-  font-family: var(--font-hud);
-  font-size: 15px;
-  letter-spacing: 0.15em;
-  color: var(--c-text-dim);
-}
-
 /* ── Info Panel — wireframe HUD, rounded rect ──────────────────────────────── */
+/* ⚠ 寬度是【佔比】而不是 clamp(420px, 32vw, 540px) —— 編輯模式（鍵盤 e）要能
+   直接調左右比例，而這一端是固定 1080p 投影，不需要 clamp 的彈性。
+   變數由 App 掛在 .app-frame 上（見 config/tableTuning.js 的 panelPct）。
+   ⚠ 調太窄時維養表的名稱欄會開始被 ellipsis 截斷，編輯面板會即時顯示換算的 px。 */
 .info-panel {
-  width: clamp(420px, 32vw, 540px);
-  min-width: 420px;
-  max-width: 540px;
+  width: var(--panel-pct, 30%);
   flex-shrink: 0;
   height: 100%;
   /* 毛玻璃＝牆面 .panel-glass + .panel-glass-rim 的值（見 :root 的 --glass-*）。
@@ -393,9 +310,11 @@ html, body {
    顏色用 color 而不是 stroke，元件裡的 SVG 走 currentColor。 */
 .center-hub {
   position: absolute;
-  left: 50%; top: 70%;
-  width: 280px;
-  height: 280px;
+  /* ⚠ 位置與大小由 App 掛的 CSS 變數決定（config/tableTuning.js）——
+     連線 SVG 與 WebGL 發光層讀的是同一份，任何一邊寫死就會錯開。 */
+  left: var(--hub-x, 50%); top: var(--hub-y, 70%);
+  width: var(--hub-size, 280px);
+  height: var(--hub-size, 280px);
   transform: translate(-50%, -50%);
   pointer-events: none;
   /* 核心框：與牆面的 FX.frame.hubIdle = 0 同一條規則 —— 沒卡時幾乎不發光，
@@ -441,8 +360,8 @@ html, body {
 /* ── NFC Slot ────────────────────────────────────────────────────────────────── */
 .nfc-slot {
   position: absolute;
-  width: 86px;
-  height: 86px;
+  width: var(--slot-size, 86px);
+  height: var(--slot-size, 86px);
   transform: translate(-50%, -50%);
   cursor: pointer;
   user-select: none;
@@ -452,9 +371,9 @@ html, body {
 /* ── NFC slot ─────────────────────────────────────────────────────────────────
    極簡版：一圈 hairline，狀態靠「邊框亮度 + 底色 + 陰影」三階分。
    舊版的虛線外環、中間環、旋轉掃描弧與三重發光全部移除。
-   .slot-outer 的 86px 尺寸與 .slot-label 的定位是版面，不要動。 */
+   .slot-outer 的尺寸由 --slot-size 決定（編輯模式可調），.slot-label 的定位是版面。 */
 .slot-outer {
-  width: 86px; height: 86px;
+  width: var(--slot-size, 86px); height: var(--slot-size, 86px);
   border-radius: 50%;
   border: 1px solid var(--glow-dim);
   background: transparent;
@@ -1016,3 +935,175 @@ html, body {
   line-height: 2;
   letter-spacing: 0.10em;
 }
+
+
+/* ============================================================================
+   版面編輯模式（鍵盤 e）—— 暫時性工具，展場投影不會進到這裡。
+   顏色刻意用青色：這個介面本身是無彩的黑白灰，編輯器的東西一眼分得出不是內容。
+   ========================================================================== */
+
+/* 拖曳把手層。⚠ 它是用 portal 掛進 .hub-container 裡面的（見 TableEditor），
+   所以 inset: 0 就自然與圓圈同一個座標系 —— 不要改回在外面自己對齊那個容器。 */
+.te-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 60;
+  pointer-events: none;
+}
+
+.te-handle {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  border: 1px dashed rgba(0, 200, 255, 0.6);
+  background: rgba(0, 200, 255, 0.06);
+  cursor: move;
+  pointer-events: auto;
+}
+.te-handle:hover { background: rgba(0, 200, 255, 0.16); }
+.te-handle--on {
+  border-style: solid;
+  border-color: #00e0ff;
+  border-width: 2px;
+  background: rgba(0, 200, 255, 0.18);
+}
+/* 搬離過弧線的用實線點出來 —— 匯出時它們會被單獨列出，之後調橢圓參數也不會跟著跑。 */
+.te-handle--moved { border-style: solid; border-color: rgba(0, 224, 255, 0.85); }
+.te-handle--hub { border-color: rgba(180, 130, 255, 0.7); background: rgba(180, 130, 255, 0.06); }
+.te-handle--hub:hover { background: rgba(180, 130, 255, 0.16); }
+
+.te-handle__tag {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 4px);
+  transform: translateX(-50%);
+  white-space: nowrap;
+  font: 11px/1 -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+  font-variant-numeric: tabular-nums;
+  color: #00e0ff;
+  pointer-events: none;
+}
+
+/* ── 控制面板 ───────────────────────────────────────────────────────────────
+   ⚠ column-reverse：DOM 順序是「頭在前」，畫出來頭在【最下面】。面板靠下對齊，
+     頭放上面的話內容一變高度整排按鈕就上下跳，滑鼠對不準。 */
+.te-panel {
+  position: fixed;
+  left: 14px;
+  bottom: 14px;
+  z-index: 80;
+  width: 420px;
+  max-width: calc(100vw - 28px);
+  border-radius: 10px;
+  background: rgba(8, 10, 14, 0.94);
+  border: 1px solid rgba(0, 200, 255, 0.3);
+  color: rgba(255, 255, 255, 0.9);
+  font: 13px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.55);
+  display: flex;
+  flex-direction: column-reverse;
+}
+.te-panel--min { width: auto; }
+
+.te-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-top: 1px solid rgba(0, 200, 255, 0.18);
+}
+.te-panel--min .te-head { border-top: none; }
+.te-head strong { font-weight: 600; letter-spacing: 0.5px; }
+.te-spacer { flex: 1; }
+
+.te-body { padding: 10px 12px 4px; }
+
+.te-panel button,
+.te-export button {
+  padding: 5px 11px;
+  border-radius: 6px;
+  border: 1px solid rgba(0, 200, 255, 0.45);
+  background: rgba(0, 200, 255, 0.12);
+  color: #d8f6ff;
+  font: inherit;
+  cursor: pointer;
+}
+.te-panel button:hover:not(:disabled),
+.te-export button:hover { background: rgba(0, 200, 255, 0.24); }
+.te-panel button:disabled { opacity: 0.35; cursor: default; }
+.te-icon { padding: 3px 8px !important; line-height: 1; }
+
+.te-slider {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin-bottom: 10px;
+  color: rgba(255, 255, 255, 0.75);
+  font-variant-numeric: tabular-nums;
+}
+.te-slider em { color: rgba(255, 255, 255, 0.45); font-style: normal; }
+.te-slider input { width: 100%; accent-color: #00e0ff; }
+
+.te-foot {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+  padding-top: 9px;
+  border-top: 1px solid rgba(0, 200, 255, 0.18);
+  padding-bottom: 8px;
+}
+
+.te-dim { color: rgba(255, 255, 255, 0.5); }
+.te-hint { margin: 4px 0 0; line-height: 1.5; }
+
+/* 有覆寫值時的常駐提醒 —— 編輯模式關掉也還在 */
+.te-badge {
+  position: fixed;
+  right: 16px;
+  top: 16px;
+  z-index: 70;
+  padding: 5px 11px;
+  border-radius: 999px;
+  background: rgba(8, 10, 14, 0.9);
+  border: 1px solid rgba(0, 200, 255, 0.4);
+  color: rgba(216, 246, 255, 0.85);
+  font: 12px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+  pointer-events: none;
+}
+
+/* ── 匯出視窗 ── */
+.te-export {
+  position: fixed;
+  left: 14px;
+  bottom: 14px;
+  z-index: 90;
+  width: 620px;
+  max-width: calc(100vw - 28px);
+  max-height: calc(100vh - 28px);
+  display: flex;
+  flex-direction: column;
+  border-radius: 10px;
+  background: rgba(8, 10, 14, 0.97);
+  border: 1px solid rgba(0, 200, 255, 0.45);
+  color: rgba(255, 255, 255, 0.9);
+  font: 13px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.6);
+}
+.te-export .te-head { border-top: none; border-bottom: 1px solid rgba(0, 200, 255, 0.18); }
+.te-export textarea {
+  flex: 1;
+  min-height: 240px;
+  margin: 10px;
+  padding: 9px 11px;
+  border-radius: 6px;
+  border: 1px solid rgba(0, 200, 255, 0.3);
+  background: rgba(0, 0, 0, 0.45);
+  color: #eaffff;
+  font: 12px/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  white-space: pre;
+  overflow: auto;
+  resize: vertical;
+}
+.te-export-note { padding: 0 12px 10px; }

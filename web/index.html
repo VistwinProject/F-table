@@ -5,15 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>NFC Control</title>
 
-    <!-- Anti-FOUC: apply saved theme before paint -->
-    <script>
-      (function () {
-        try {
-          var t = localStorage.getItem('theme') || 'dark'
-          document.documentElement.setAttribute('data-theme', t)
-        } catch (_) {}
-      })()
-    </script>
+    <!-- ⚠ 這裡原本有一段從 localStorage 讀主題的 anti-FOUC script，
+         連同右上角的深淺色切換一起移除了 —— 展場的桌面是投影，只會用深色。
+         上面 <html> 的 data-theme="dark" 現在是唯一的來源。 -->
 
     <!-- Latin/數字走系統字（見 style.css 的 --font-display）；只外掛 CJK 字體。
          ⚠ 展場離線時這條會失效，退到 PingFang TC / 微軟正黑體。 -->

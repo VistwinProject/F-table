@@ -1,53 +1,27 @@
-import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
+import { useState, useEffect, useReducer, useRef, useCallback, useMemo } from 'react'
 import InfoPanel from './components/InfoPanel.jsx'
 import CenterHub from './components/CenterHub.jsx'
 import NfcSlot from './components/NfcSlot.jsx'
 import ConnectionStatus from './components/ConnectionStatus.jsx'
 import StudioHeader from './components/StudioHeader.jsx'
 import WelcomeScreen from './components/WelcomeScreen.jsx'
+import TableEditor from './components/TableEditor.jsx'
 import GlowLayer from './glow/GlowLayer.jsx'
 import { circlePoints } from './glow/ribbon.js'
 import { attachSimKeys } from './shared/simKeys.js'
+// ⚠ 版面幾何（左右佔比、圓圈大小、圓圈位置）全部從這裡讀，不要在這個檔案裡
+//   再寫一份數字 —— CSS、連線 SVG 與 WebGL 發光層必須吃到同一組值。
+import {
+  getTuning, hubClear, hubPos, hubSize, isTuned, panelPct,
+  slotClear, slotPos, slotSize, subscribe,
+} from './config/tableTuning.js'
 
 const WS_URL       = 'ws://localhost:8787'
 const RECONNECT_MS = 3000
 
-// ── Orbit geometry (viewBox % units) ─────────────────────────────────────────
-// Slots sit along the TOP half of a wide, flattened ellipse (a shallow dome).
-// The core sits below the ellipse center, so beams fan up-and-out to each slot.
-const ELLIPSE_CX = 50   // ellipse center x
-const ELLIPSE_CY = 70   // ellipse center y (= the side-slot baseline)
-const ORBIT_RX   = 43   // horizontal radius (wide)
-const ORBIT_RY   = 48   // vertical radius (rounded dome, not too flat)
-const ARC_START  = 180  // leftmost angle (deg)
-const ARC_SWEEP  = 180  // upper semicircle of the ellipse
-
-// Core sits ON the arc's baseline (same y as the side nodes) so the fan from
-// the core's point of view spans a TRUE 180° — NFC 01 ↔ core ↔ NFC 09 form a
-// horizontal line, with the dome opening straight up above.
-const HUB_X      = 50
-const HUB_Y      = ELLIPSE_CY
-
-// Per the design sketch, every other slot (1-indexed even = NFC 02/04/06/08) is
-// pulled inward, creating a staggered two-ring fan. The 1-indexed odd slots —
-// NFC 01/03/05/07/09 — stay on the outer ellipse, so NFC 01 and NFC 09 still sit
-// at the horizontal extremes of the 180° fan.
-const INSET_RATIO = 0.7
-
-// Position of slot i (of n) along the upper elliptical arc.
-export function slotPos(i, n) {
-  const f      = n > 1 ? i / (n - 1) : 0.5
-  const deg    = ARC_START + f * ARC_SWEEP
-  const rad    = (deg * Math.PI) / 180
-  // 0-indexed odd ↔ 1-indexed even → inset toward the core
-  const k      = (i % 2 === 1) ? INSET_RATIO : 1
-  return {
-    x: ELLIPSE_CX + ORBIT_RX * k * Math.cos(rad),
-    y: ELLIPSE_CY + ORBIT_RY * k * Math.sin(rad),
-    deg,
-    rad,
-  }
-}
+// ⚠ 弧線幾何與圓圈大小已經搬到 config/tableTuning.js —— 編輯模式（鍵盤 e）
+//   要能即時改它們，而 CSS、連線 SVG 與 WebGL 發光層必須讀到同一份。
+//   這裡只留「用」的地方，不留「定義」。
 
 export const SLOTS = [
   { slotIndex: 0, label: 'NFC 01', id: 'r0' },
@@ -74,17 +48,27 @@ export default function App() {
   const [wsStatus,          setWsStatus]          = useState('connecting')
   const [slotStates,        setSlotStates]         = useState(() => Array.from({ length: 9 }, initSlotState))
   const [focusedIdx,        setFocusedIdx]         = useState(null)
-  const [theme,             setTheme]              = useState(
-    () => document.documentElement.getAttribute('data-theme') || 'dark'
-  )
+  // 編輯模式（鍵盤 e）。⚠ 展場的桌面是投影、沒有接鍵盤，用按鍵開啟是安全的
+  //   —— 與牆面、iPad 同一個作法。
+  const [edit,              setEdit]               = useState(false)
 
   const wsRef    = useRef(null)
   const timerRef = useRef(null)
 
-  const handleThemeToggle = useCallback((next) => {
-    setTheme(next)
-    document.documentElement.setAttribute('data-theme', next)
-    try { localStorage.setItem('theme', next) } catch (_) {}
+  // 幾何覆寫是模組層的可變狀態（見 config/tableTuning.js），它一變就要重畫整棵樹。
+  const [, bumpTuning] = useReducer((n) => n + 1, 0)
+  useEffect(() => subscribe(bumpTuning), [])
+
+  useEffect(() => {
+    const onKey = (e) => {
+      if (e.metaKey || e.ctrlKey || e.altKey || e.repeat) return
+      const t = e.target
+      if (t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))) return
+      if (e.key === 'e' || e.key === 'E') setEdit((v) => !v)
+      if (e.key === 'Escape') setEdit(false)
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
   }, [])
 
   const patchSlot = useCallback((index, patch) => {
@@ -223,12 +207,20 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeKey])
 
+  // 幾何一變就要讓發光層重建（ribbon 的頂點是烤好的）——
+  // 這個字串同時當 buildGlow 的依賴與 GlowLayer 的 rebuildKey。
+  const T = getTuning()
+  const tuningKey = JSON.stringify([T.slotSize, T.hubSize, T.hub, T.slots, T.panelPct])
+
   // 幾何。⚠ 這裡的 % → 世界座標換算必須與 ConnectionLines / .nfc-slot / .center-hub
-  //    的 CSS 定位用同一組數字（slotPos、HUB_X/Y、86px、280px），否則光會偏掉。
+  //    的 CSS 定位用同一組數字，否則光會偏掉 —— 所以三邊一律讀 config/tableTuning.js。
+  // ⚠ 依賴陣列吃 tuningKey：圓圈大小／位置是【烤進 ribbon 頂點】的，值變了要讓
+  //   GlowLayer 整組重建（見它的 rebuildKey），光改設定沒有用。
   const buildGlow = useCallback((world, px) => {
     const toW = (xPct, yPct) => ({ x: (xPct / 100) * world.w, y: (yPct / 100) * world.h })
     const s = world.w / (px.width || world.w)   // CSS px → 世界單位
-    const hub = toW(HUB_X, HUB_Y)
+    const hp = hubPos()
+    const hub = toW(hp.x, hp.y)
 
     const beams = []
     const lines = []
@@ -240,21 +232,34 @@ export default function App() {
       const dist = Math.hypot(dx, dy) || 1
       const ux = dx / dist
       const uy = dy / dist
-      // 端點讓開中樞與圓環，跟 ConnectionLines 的 HUB_CLEAR_PX / SLOT_CLEAR_PX 同一組值。
-      const h = { x: hub.x + HUB_CLEAR_PX * s * ux, y: hub.y + HUB_CLEAR_PX * s * uy }
-      const e = { x: sp.x - SLOT_CLEAR_PX * s * ux, y: sp.y - SLOT_CLEAR_PX * s * uy }
+      // 端點讓開中樞與圓環 —— 與 ConnectionLines 讀的是同兩個函式。
+      const h = { x: hub.x + hubClear() * s * ux, y: hub.y + hubClear() * s * uy }
+      const e = { x: sp.x - slotClear() * s * ux, y: sp.y - slotClear() * s * uy }
       // ⚠ 順序＝流動方向：卡片 → 中樞，與牆面的走線同向（資料流進 AI 大腦）。
       beams.push({ id: `beam-${slot.slotIndex}`, pts: [e, h] })
-      lines.push({ id: `ring-${slot.slotIndex}`, pts: circlePoints(sp.x, sp.y, 43 * s), closed: true })
+      lines.push({ id: `ring-${slot.slotIndex}`, pts: circlePoints(sp.x, sp.y, (slotSize() / 2) * s), closed: true })
     })
-    // 中樞環：CenterHub 的 SVG 是 viewBox 240 裡半徑 116，元素本身 280px → 半徑 135.3px。
-    lines.push({ id: 'core', pts: circlePoints(hub.x, hub.y, (280 / 2) * (116 / 120) * s), closed: true })
+    // 中樞環：CenterHub 的 SVG 是 viewBox 240 裡半徑 116，元素本身是 hubSize()，
+    // 所以實際半徑 = hubSize/2 × 116/120。
+    lines.push({ id: 'core', pts: circlePoints(hub.x, hub.y, (hubSize() / 2) * (116 / 120) * s), closed: true })
     return { lines, beams }
-  }, [])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tuningKey])
 
   return (
-    <div className="app-frame">
-      <StudioHeader theme={theme} onThemeToggle={handleThemeToggle} />
+    <div
+      className="app-frame"
+      /* ⚠ 這三個變數是 CSS 端唯一的幾何來源（.info-panel / .nfc-slot / .center-hub），
+         與上面 buildGlow、下面 ConnectionLines 讀的是同一份 tuning。 */
+      style={{
+        '--panel-pct': `${panelPct()}%`,
+        '--slot-size': `${slotSize()}px`,
+        '--hub-size': `${hubSize()}px`,
+        '--hub-x': `${hubPos().x}%`,
+        '--hub-y': `${hubPos().y}%`,
+      }}
+    >
+      <StudioHeader />
 
       <div className="app-body">
         {/* InfoPanel 只用這兩個 prop（見其 signature）。 */}
@@ -269,6 +274,7 @@ export default function App() {
               containerRef={hubRef}
               build={buildGlow}
               activeIds={glowActive}
+              rebuildKey={tuningKey}
               className="glow-layer"
             />
             <ConnectionLines slots={SLOTS} slotStates={slotStates} />
@@ -329,6 +335,12 @@ export default function App() {
           }}
         />
       )}
+
+      {edit && <TableEditor onClose={() => setEdit(false)} hubRef={hubRef} />}
+
+      {/* ⚠ 有覆寫就一直顯示，編輯模式關掉也還在 —— 展場如果有人誤按 e 拖到東西，
+          這是唯一會讓人發現「現在畫面不是程式碼裡那一版」的線索。 */}
+      {!edit && isTuned() && <div className="te-badge">已套用編輯值（按 e 開啟編輯）</div>}
     </div>
   )
 }
@@ -337,8 +349,8 @@ export default function App() {
 // Hub SVG renders an outer ring at ~135px from centre (and a wider aura beyond);
 // 150px keeps beams from cutting through the ring while staying close to it.
 // Slot ring is 86px (43px half) + small visual gap.
-const HUB_CLEAR_PX  = 150
-const SLOT_CLEAR_PX = 50
+// ⚠ 兩端讓開的距離已經改成跟著圓圈大小走（tableTuning 的 hubClear / slotClear）——
+//   寫死的話圓圈調大之後，線會從圓圈裡面長出來。
 
 /* ── SVG Connection Lines with animated transmission ──
    The SVG uses preserveAspectRatio="none" so viewBox 0–100 maps directly to
@@ -376,7 +388,8 @@ function ConnectionLines({ slots, slotStates }) {
     x: (xPct / 100) * W,
     y: (yPct / 100) * H,
   })
-  const hub = toPx(HUB_X, HUB_Y)
+  const hp  = hubPos()
+  const hub = toPx(hp.x, hp.y)
 
   return (
     <svg
@@ -397,10 +410,10 @@ function ConnectionLines({ slots, slotStates }) {
         const uy   = dy / dist
 
         // Endpoints clear hub box and slot ring by px amounts (uniform in every direction)
-        const hx = hub.x + HUB_CLEAR_PX  * ux
-        const hy = hub.y + HUB_CLEAR_PX  * uy
-        const sx = sp.x  - SLOT_CLEAR_PX * ux
-        const sy = sp.y  - SLOT_CLEAR_PX * uy
+        const hx = hub.x + hubClear()  * ux
+        const hy = hub.y + hubClear()  * uy
+        const sx = sp.x  - slotClear() * ux
+        const sy = sp.y  - slotClear() * uy
 
         const state    = slotStates[slot.slotIndex]
         const isActive = state.activeCard !== null
