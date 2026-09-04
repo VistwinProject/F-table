@@ -154,6 +154,31 @@ html, body {
   box-shadow: 0 0 8px rgba(160, 216, 255, 0.55);
 }
 
+/* ── 背景漸層 ─────────────────────────────────────────────────────────────────
+   三個色點各自往外散成一團柔光，疊起來就是任意形狀漸層（見 MeshBackground.jsx）。
+   ⚠ 這一層是 .app-frame 的底（z-index 0），.app-body 是 1 —— 順序不要調換，
+      不然色團會蓋在面板與感應圈上面。
+   ⚠ 色團自己【不要】加 filter: blur()。radial-gradient 本身就是柔的，加了 blur
+      等於要求合成器每次位移都重做一次大面積模糊，那正是「背景會動」變成
+      「整個介面掉幀」的原因。 */
+.bg-mesh {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+.bg-mesh__blob {
+  position: absolute;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  /* ⚠ 只動 transform（見 MeshBackground 的迴圈），所以宣告給合成器知道。
+     動 left/top 會觸發 layout + paint，那是完全不同量級的成本。 */
+  will-change: transform;
+}
+
 /* ── App body layout ─────────────────────────────────────────────────────────── */
 .app-body {
   display: flex;
@@ -1057,6 +1082,83 @@ html, body {
 
 .te-dim { color: rgba(255, 255, 255, 0.5); }
 .te-hint { margin: 4px 0 0; line-height: 1.5; }
+
+/* 背景色點的把手層。⚠ 蓋在整個 .app-frame 上（色點的座標基準就是它），
+   與感應圈那層不同 —— 那一層是 portal 進 .hub-container 的。 */
+.te-bglayer {
+  position: absolute;
+  inset: 0;
+  z-index: 55;
+  pointer-events: none;
+  overflow: hidden;
+  border-radius: inherit;
+}
+
+.te-bgdot {
+  position: absolute;
+  width: 26px;
+  height: 26px;
+  margin: -13px 0 0 -13px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.9);
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.55), 0 2px 8px rgba(0, 0, 0, 0.5);
+  cursor: move;
+  pointer-events: auto;
+}
+.te-bgdot--on {
+  border-color: #00e0ff;
+  box-shadow: 0 0 0 3px rgba(0, 224, 255, 0.35), 0 2px 8px rgba(0, 0, 0, 0.5);
+}
+/* 把標籤推到點的下方 —— 色點常常落在畫面上緣，標籤放上面會被切掉。 */
+.te-bgdot .te-handle__tag {
+  bottom: auto;
+  top: calc(100% + 5px);
+}
+
+/* 分隔一段（背景漸層那組的標題列） */
+.te-sep {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 4px 0 8px;
+  padding-top: 9px;
+  border-top: 1px solid rgba(0, 200, 255, 0.18);
+}
+.te-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  user-select: none;
+}
+.te-check input { accent-color: #00e0ff; }
+
+.te-colors {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.te-color {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 6px;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  color: rgba(255, 255, 255, 0.6);
+  cursor: pointer;
+}
+.te-color--on { border-color: rgba(0, 224, 255, 0.6); background: rgba(0, 200, 255, 0.1); }
+.te-color input {
+  width: 30px;
+  height: 22px;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 4px;
+  background: none;
+  cursor: pointer;
+}
 
 /* 有覆寫值時的常駐提醒 —— 編輯模式關掉也還在 */
 .te-badge {

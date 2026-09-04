@@ -56,6 +56,31 @@ export const DEFAULTS = {
   hubSize: 280,   // 中樞圈直徑（px）
   hub: { x: ORBIT.cx, y: ORBIT.cy },  // 中樞位置（容器 %）
   slots: {},      // { [slotIndex]: { x, y } }，只存有搬過的；其餘用 orbitPos()
+
+  // ── 背景漸層 ──────────────────────────────────────────────────────────────
+  // 三個色點，每個點往外散成一團柔光，疊起來就是 Adobe 那種任意形狀漸層。
+  // 展場運行時每個點會在自己的中心附近緩慢繞圈（像 Apple 的桌布），
+  // 編輯模式會把晃動【凍結】—— 點是動的根本擺不準。
+  bg: {
+    on: true,
+    // 每個點的擴散半徑，以容器【短邊】的 % 計 —— 用短邊才不會因為畫面比例
+    // 變寬就把色團拉成橢圓。
+    spread: 62,
+    strength: 0.45, // 整體不透明度。顏色本身只管色相，濃淡一律由這個調
+    drift: 2.6,     // 晃動幅度（容器 %）。「稍微晃動」，不是飄來飄去
+    speed: 1,       // 晃動速度倍率。1 = 每個點約 26～38 秒繞一圈
+    // 預設走冷色，與這一端的淡藍走線同一家人；刻意壓得很暗 ——
+    // 目的是「讓底不要死板」，不是「把背景變成主角」。
+    // ⚠ 點位刻意避開左側面板（它大約佔畫面 x 的 1.5%～30%）。面板是毛玻璃，
+    //   背景會【透過去】——最濃的色團正好壓在面板上時，資料列的次階文字對比
+    //   會明顯掉一階，而這一端的觀眾偏年長、投影又會再洗掉一些。
+    //   想讓面板也帶顏色的話把色點拖過去就行，只是要順手把濃淡調低。
+    points: [
+      { x: 66, y: 18, color: '#1B4FA8' },
+      { x: 90, y: 66, color: '#1F6B72' },
+      { x: 18, y: 92, color: '#3A2E7A' },
+    ],
+  },
 }
 
 // ── 狀態 ────────────────────────────────────────────────────────────────────
@@ -72,13 +97,28 @@ function load() {
       ...s,
       hub: { ...DEFAULTS.hub, ...(s.hub || {}) },
       slots: { ...(s.slots || {}) },
+      // ⚠ points 是陣列，展開合併救不了「舊存檔少一個點」這種情況 ——
+      //   逐格對著 DEFAULTS 補，缺的用預設值填。
+      bg: {
+        ...DEFAULTS.bg,
+        ...(s.bg || {}),
+        points: DEFAULTS.bg.points.map((d, i) => ({ ...d, ...(s.bg?.points?.[i] || {}) })),
+      },
     }
   } catch {
     return null
   }
 }
 
-let TUNING = load() || { ...DEFAULTS, hub: { ...DEFAULTS.hub }, slots: {} }
+// ⚠ 一定要深拷貝：bg.points 是陣列，淺拷貝會讓「重設」之後編輯器改到 DEFAULTS 本身。
+const freshDefaults = () => ({
+  ...DEFAULTS,
+  hub: { ...DEFAULTS.hub },
+  slots: {},
+  bg: { ...DEFAULTS.bg, points: DEFAULTS.bg.points.map((p) => ({ ...p })) },
+})
+
+let TUNING = load() || freshDefaults()
 let STORED = (() => { try { return !!localStorage.getItem(KEY) } catch { return false } })()
 
 const listeners = new Set()
@@ -103,14 +143,14 @@ export function setTuning(next) {
 export function resetTuning() {
   try { localStorage.removeItem(KEY) } catch { /* 同上 */ }
   STORED = false
-  TUNING = { ...DEFAULTS, hub: { ...DEFAULTS.hub }, slots: {} }
+  TUNING = freshDefaults()
   for (const fn of listeners) fn(TUNING)
   return TUNING
 }
 
 export function isTuned() {
   if (!STORED) return false
-  return JSON.stringify(TUNING) !== JSON.stringify({ ...DEFAULTS, hub: { ...DEFAULTS.hub }, slots: {} })
+  return JSON.stringify(TUNING) !== JSON.stringify(freshDefaults())
 }
 
 // ── 讀取點 ──────────────────────────────────────────────────────────────────
@@ -120,6 +160,8 @@ export const hubPos = () => TUNING.hub
 export const slotSize = () => TUNING.slotSize
 export const hubSize = () => TUNING.hubSize
 export const panelPct = () => TUNING.panelPct
+/** 背景漸層：{ on, spread, strength, drift, speed, points[] }。 */
+export const bgConf = () => TUNING.bg
 
 // 連線兩端要讓開的距離（px）。⚠ 一定要跟著圓圈大小走 ——
 // 寫死的話圓圈調大之後，線就會從圓圈裡面長出來。
@@ -128,6 +170,9 @@ export const hubClear = () => hubSize() / 2 + 15
 
 // ── 匯出（貼回程式碼）───────────────────────────────────────────────────────
 const r1 = (n) => Math.round(n * 10) / 10
+// ⚠ 佔比要留兩位小數：1858px 寬的容器上，29.06% 與 29.1% 差 2px，
+//   而預設值就是特意對到 540px 的（見 DEFAULTS 的說明）。
+const r2 = (n) => Math.round(n * 100) / 100
 
 export function exportTuning() {
   const T = TUNING
@@ -136,7 +181,7 @@ export function exportTuning() {
   L.push('// 貼回 web/src/config/tableTuning.js 的 DEFAULTS')
   L.push('')
   L.push('export const DEFAULTS = {')
-  L.push(`  panelPct: ${r1(T.panelPct)},`)
+  L.push(`  panelPct: ${r2(T.panelPct)},`)
   L.push(`  slotSize: ${r1(T.slotSize)},`)
   L.push(`  hubSize: ${r1(T.hubSize)},`)
   L.push(`  hub: { x: ${r1(T.hub.x)}, y: ${r1(T.hub.y)} },`)
@@ -151,6 +196,17 @@ export function exportTuning() {
     }
     L.push('  },')
   }
+  const b = T.bg
+  L.push('  bg: {')
+  L.push(`    on: ${b.on},`)
+  L.push(`    spread: ${r1(b.spread)},`)
+  L.push(`    strength: ${Math.round(b.strength * 100) / 100},`)
+  L.push(`    drift: ${r1(b.drift)},`)
+  L.push(`    speed: ${Math.round(b.speed * 100) / 100},`)
+  L.push('    points: [')
+  for (const p of b.points) L.push(`      { x: ${r1(p.x)}, y: ${r1(p.y)}, color: '${p.color}' },`)
+  L.push('    ],')
+  L.push('  },')
   L.push('}')
   if (moved.length) {
     L.push('')

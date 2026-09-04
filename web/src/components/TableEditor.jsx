@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import {
-  SLOT_COUNT, exportTuning, getTuning, hubPos, hubSize,
+  SLOT_COUNT, bgConf, exportTuning, getTuning, hubPos, hubSize,
   resetTuning, setTuning, slotPos, slotSize,
 } from '../config/tableTuning.js'
 
@@ -12,6 +12,7 @@ import {
 //   左右佔比   左側資訊面板佔 .app-body 的百分比
 //   圓圈大小   感應圈直徑、中樞圈直徑
 //   圓圈位置   九個感應圈與中樞，直接在畫面上拖
+//   背景漸層   三個色點的位置與顏色，加上擴散、濃淡、晃動幅度與速度
 //
 // ⚠ 值即時寫進 config/tableTuning.js（localStorage），CSS 變數、連線 SVG 與
 //   WebGL 發光層同時跟著變 —— 三邊讀的是同一份，不會各調各的。
@@ -29,23 +30,36 @@ export default function TableEditor({ onClose, hubRef }) {
   const [exported, setExported] = useState(null)
   const drag = useRef(null)
 
-  // 螢幕座標 → hub-container 的百分比。
-  // ⚠ 用 hub-container 而不是視窗：所有圓圈的 left/top 都是這個容器的 %，
-  //   換錯基準的話拖曳會有倍率誤差（容器只佔 96% × 90%）。
-  const toPct = useCallback((e) => {
-    const el = hubRef?.current
+  const set = (patch) => setTuning((t) => ({ ...t, ...patch }))
+  const setBg = (patch) => setTuning((t) => ({ ...t, bg: { ...t.bg, ...patch } }))
+  const setBgPoint = (i, patch) => setTuning((t) => ({
+    ...t,
+    bg: { ...t.bg, points: t.bg.points.map((p, j) => (j === i ? { ...p, ...patch } : p)) },
+  }))
+
+  // 螢幕座標 → 某個容器的百分比。
+  // ⚠ 兩種物件的基準【不一樣】：感應圈與中樞是 .hub-container 的 %（那個容器
+  //   只佔 main 的 96%×90% 又被左側面板推開），背景色點是 .app-frame 的 %。
+  //   換錯基準拖起來就是倍率不對，而且只有在容器不滿版時才看得出來。
+  const pctIn = useCallback((el, e) => {
     if (!el) return null
     const r = el.getBoundingClientRect()
     return { x: ((e.clientX - r.left) / r.width) * 100, y: ((e.clientY - r.top) / r.height) * 100 }
-  }, [hubRef])
+  }, [])
+  const toPct = useCallback((e, kind) => (
+    pctIn(kind === 'bg' ? document.querySelector('.app-frame') : hubRef?.current, e)
+  ), [pctIn, hubRef])
 
   const startDrag = (kind, i) => (e) => {
     e.preventDefault()
     e.stopPropagation()
-    const p = toPct(e)
+    const p = toPct(e, kind)
     if (!p) return
     setSel({ kind, i })
-    const base = kind === 'hub' ? { ...hubPos() } : { ...slotPos(i) }
+    const base =
+      kind === 'hub' ? { ...hubPos() }
+      : kind === 'bg' ? { ...bgConf().points[i] }
+      : { ...slotPos(i) }
     drag.current = { kind, i, start: p, base }
     try {
       e.currentTarget.setPointerCapture(e.pointerId)
@@ -60,12 +74,13 @@ export default function TableEditor({ onClose, hubRef }) {
       if (!d) return
       // 兜底：沒按著鍵卻收到 move ＝ pointerup 漏掉了，不修的話圓圈會黏著游標跑。
       if (e.buttons === 0) { drag.current = null; return }
-      const p = toPct(e)
+      const p = toPct(e, d.kind)
       if (!p) return
       const snap = (v) => (e.altKey ? Math.round(v * 100) / 100 : Math.round(v / GRID) * GRID)
       const x = snap(d.base.x + (p.x - d.start.x))
       const y = snap(d.base.y + (p.y - d.start.y))
       if (d.kind === 'hub') setTuning((t) => ({ ...t, hub: { x, y } }))
+      else if (d.kind === 'bg') setBgPoint(d.i, { x, y })
       else setTuning((t) => ({ ...t, slots: { ...t.slots, [d.i]: { x, y } } }))
     }
     const up = () => (drag.current = null)
@@ -94,17 +109,20 @@ export default function TableEditor({ onClose, hubRef }) {
       }[e.key]
       if (!d) return
       e.preventDefault()
-      const base = sel.kind === 'hub' ? hubPos() : slotPos(sel.i)
+      const base =
+        sel.kind === 'hub' ? hubPos()
+        : sel.kind === 'bg' ? bgConf().points[sel.i]
+        : slotPos(sel.i)
       const x = r1(base.x + d[0])
       const y = r1(base.y + d[1])
       if (sel.kind === 'hub') setTuning((t) => ({ ...t, hub: { x, y } }))
+      else if (sel.kind === 'bg') setBgPoint(sel.i, { x, y })
       else setTuning((t) => ({ ...t, slots: { ...t.slots, [sel.i]: { x, y } } }))
     }
     window.addEventListener('keydown', key)
     return () => window.removeEventListener('keydown', key)
   }, [sel])
 
-  const set = (patch) => setTuning((t) => ({ ...t, ...patch }))
 
   // 把搬過的圓圈放回弧線上。⚠ 只清 slots，不動大小與佔比。
   const resetSlots = () => {
@@ -119,6 +137,7 @@ export default function TableEditor({ onClose, hubRef }) {
     ? Math.round(document.querySelector('.info-panel')?.getBoundingClientRect().width || 0)
     : 0
   const movedCount = Object.keys(T.slots).length
+  const bg = bgConf()
 
   return (
     <>
@@ -127,6 +146,21 @@ export default function TableEditor({ onClose, hubRef }) {
             而容器只佔 main 的 96% × 90%、又被左側面板推開 —— 在別的祖先底下
             複製一份幾何遲早會對不上（實際踩過：差了 583px）。
             掛進去之後座標系天生就是同一個。 */}
+      {/* 背景色點的把手。⚠ 這一組【不】掛進 hub-container —— 色點是整個 .app-frame
+          的百分比，掛進去的話基準就變成那個小容器了。 */}
+      <div className="te-bglayer">
+        {bg.points.map((p, i) => (
+          <div
+            key={i}
+            className={`te-bgdot${sel?.kind === 'bg' && sel.i === i ? ' te-bgdot--on' : ''}`}
+            style={{ left: `${p.x}%`, top: `${p.y}%`, background: p.color }}
+            onPointerDown={startDrag('bg', i)}
+          >
+            <span className="te-handle__tag">色點 {i + 1} · {r1(p.x)},{r1(p.y)}</span>
+          </div>
+        ))}
+      </div>
+
       {hubRef?.current && createPortal(
       <div className="te-layer">
         {Array.from({ length: SLOT_COUNT }, (_, i) => {
@@ -186,8 +220,54 @@ export default function TableEditor({ onClose, hubRef }) {
               />
             </label>
 
+            <div className="te-sep">
+              <label className="te-check">
+                <input type="checkbox" checked={bg.on} onChange={(e) => setBg({ on: e.target.checked })} />
+                背景漸層
+              </label>
+              <span className="te-dim">編輯時晃動已凍結</span>
+            </div>
+
+            {bg.on && (
+              <>
+                <div className="te-colors">
+                  {bg.points.map((p, i) => (
+                    <label key={i} className={`te-color${sel?.kind === 'bg' && sel.i === i ? ' te-color--on' : ''}`}>
+                      <input
+                        type="color" value={p.color}
+                        onChange={(e) => setBgPoint(i, { color: e.target.value })}
+                        onFocus={() => setSel({ kind: 'bg', i })}
+                      />
+                      <span>色點 {i + 1}</span>
+                    </label>
+                  ))}
+                </div>
+
+                <label className="te-slider">
+                  <span>擴散 {r1(bg.spread)}</span>
+                  <input type="range" min="15" max="130" step="1" value={bg.spread}
+                    onChange={(e) => setBg({ spread: parseFloat(e.target.value) })} />
+                </label>
+                <label className="te-slider">
+                  <span>濃淡 {Math.round(bg.strength * 100)}%</span>
+                  <input type="range" min="0" max="1" step="0.02" value={bg.strength}
+                    onChange={(e) => setBg({ strength: parseFloat(e.target.value) })} />
+                </label>
+                <label className="te-slider">
+                  <span>晃動幅度 {r1(bg.drift)}</span>
+                  <input type="range" min="0" max="12" step="0.2" value={bg.drift}
+                    onChange={(e) => setBg({ drift: parseFloat(e.target.value) })} />
+                </label>
+                <label className="te-slider">
+                  <span>晃動速度 ×{Math.round(bg.speed * 100) / 100}</span>
+                  <input type="range" min="0.1" max="4" step="0.05" value={bg.speed}
+                    onChange={(e) => setBg({ speed: parseFloat(e.target.value) })} />
+                </label>
+              </>
+            )}
+
             <p className="te-dim te-hint">
-              直接拖畫面上的圓圈可以改位置（方向鍵微調、Shift ×10、Alt 關閉吸附）。
+              直接拖畫面上的圓圈與色點可以改位置（方向鍵微調、Shift ×10、Alt 關閉吸附）。
               ⚠ 面板太窄時維養表的名稱欄會開始被截斷 —— 上面的 px 換算就是給這個看的。
               {movedCount > 0 && `　目前有 ${movedCount} 個感應圈被搬離弧線。`}
             </p>

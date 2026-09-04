@@ -6,6 +6,7 @@ import ConnectionStatus from './components/ConnectionStatus.jsx'
 import StudioHeader from './components/StudioHeader.jsx'
 import WelcomeScreen from './components/WelcomeScreen.jsx'
 import TableEditor from './components/TableEditor.jsx'
+import MeshBackground from './components/MeshBackground.jsx'
 import GlowLayer from './glow/GlowLayer.jsx'
 import { circlePoints } from './glow/ribbon.js'
 import { attachSimKeys } from './shared/simKeys.js'
@@ -259,6 +260,11 @@ export default function App() {
         '--hub-y': `${hubPos().y}%`,
       }}
     >
+      {/* 背景漸層。⚠ 必須是 .app-frame 的第一個子元素 —— 它是 z-index 0，
+          其餘內容（.app-body 是 z-index 1）都疊在它之上。
+          編輯模式時凍結晃動，不然點是動的擺不準。 */}
+      <MeshBackground frozen={edit} />
+
       <StudioHeader />
 
       <div className="app-body">
