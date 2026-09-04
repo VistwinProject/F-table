@@ -567,18 +567,20 @@ html, body {
 .panel-fade--out   { opacity: 0; transform: translateX(-10%); }
 .panel-fade--enter { opacity: 0; transform: translateX(10%); transition: none; }
 
-/* ── Device dashboard panel ──────────────────────────────────────────────────── */
+/* ── Device dashboard panel ──────────────────────────────────────────────────────
+   ⚠ 這一整塊【不捲動】。F 區只有 iPad 是可以真的用手滑的，牆面與桌面都是投影 ——
+     投影上「往下還有東西」等於那些東西不存在。所以版面必須自己剛好填滿：
+     留白收緊 + 趨勢圖吸收差額（.device-card--grow），overflow 用 hidden 是最後
+     一道保險，不是版面手段。 */
 .device-dash {
   flex: 1;
-  overflow-y: auto;
-  overflow-x: hidden;
-  padding: 24px 28px 28px;
+  min-height: 0;
+  overflow: hidden;
+  padding: 18px 26px 20px;
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  scrollbar-width: none;
+  gap: 10px;
 }
-.device-dash::-webkit-scrollbar { display: none; }
 
 /* Idle variant — centers the prompt vertically */
 .device-dash--idle {
@@ -673,7 +675,7 @@ html, body {
   font-weight: 800;
   letter-spacing: 0.04em;
   color: var(--c-text);
-  margin: 0 0 4px;
+  margin: 0;
   display: flex;
   align-items: baseline;
   gap: 4px;
@@ -685,17 +687,22 @@ html, body {
   background: var(--glass-bg-2);
   border: 1px solid var(--glass-border-2);
   border-radius: 14px;
-  padding: 17px 19px;
+  padding: 12px 18px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 8px;
 }
 
-.device-card__head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
+/* 吸收面板剩下的高度的那一張（趨勢圖）。維養排程 2～4 列不等，
+   差額全部由它吃，其餘卡片維持固定高度 —— 這樣不管哪一台家電，
+   面板都是剛好填滿的，不會有人多人少的空洞。
+   ⚠ 不要在這裡寫 min-height: 0。寫了之後這張卡可以被 flex 壓到比內容還矮，
+     而圖本身有自己的 min-height 撐著，被犧牲掉的就是下面的 x 軸標籤 ——
+     版面看起來「沒有溢出」，其實是無聲裁掉了（實際踩過：1440×810 時被壓 47px）。
+     留 min-height: auto 的話，這張卡最矮就是「標題 + 圖的下限 + x 軸」，
+     真的塞不下時會整個溢出面板底部，那是看得見的失敗，比悄悄裁掉好。 */
+.device-card--grow {
+  flex: 1 1 auto;
 }
 
 /* ── Legibility overrides (info panel only) ───────────────────────────────────
@@ -759,34 +766,16 @@ html, body {
 .usage-stat__delta.is-bad  .usage-stat__delta-pct { color: var(--amber); }
 
 /* ── Range tabs (日/週/月/年) ── */
-.range-tabs {
-  display: inline-flex;
-  background: var(--glass-bg-2);
-  border: 1px solid var(--glass-border-2);
-  border-radius: 8px;
-  padding: 2px;
-  gap: 1px;
-}
-.range-tab {
-  display: inline-block;
-  color: var(--c-text-dim);
-  font-family: var(--font-cjk);
-  font-size: 16px;
-  padding: 4px 14px;
-  border-radius: 6px;
-}
-.range-tab.active {
-  background: var(--accent-dim);
-  color: var(--c-text);
-}
-
 /* ── Trend bar chart ── */
 .trend-chart {
   position: relative;
   display: grid;
   grid-template-columns: 36px 1fr;
-  height: 168px;
-  margin-top: 6px;
+  /* ⚠ 高度不寫死：由 .device-card--grow 分到多少就用多少（見上面的說明）。
+     min-height 是下限，避免維養列數多的家電把圖壓成一條縫。 */
+  flex: 1 1 auto;
+  min-height: 96px;
+  margin-top: 4px;
 }
 .trend-chart__unit {
   position: absolute;
@@ -834,7 +823,7 @@ html, body {
   display: flex;
   justify-content: space-between;
   padding-left: 40px;
-  margin-top: 6px;
+  margin-top: 4px;
   font-family: var(--font-hud);
   font-size: 13px;
   color: var(--c-legible-2);
@@ -893,15 +882,22 @@ html, body {
 .maint-table {
   display: flex;
   flex-direction: column;
-  gap: 2px;
-  margin-top: 2px;
+  gap: 0;
+  margin-top: 0;
 }
+/* ⚠ 欄寬是照「內容真正需要多少」給的，不是隨手給的整數：
+     日期 2026/01/10 在 14px 的 HUD 字型下約 80px、狀態「即將到期」在 15px 下約 60px。
+     原本給 94/94/72 + gap 8，固定欄就吃掉 314px —— 面板在 1440 寬時只有 460px，
+     名稱欄只剩約 110px，「熱交換芯清潔」直接換行，整列從 32px 變成 58px，
+     四列就多出 96px，這才是面板捲動的主因（不是字太大）。
+   ⚠ 三個欄位一律 nowrap：桌面是投影，列高一變整個版面就溢出。名稱過長要截斷
+     （ellipsis）而不是換行 —— 寧可少看幾個字，也不要把版面推爆。 */
 .maint-row {
   display: grid;
-  grid-template-columns: 22px 1fr 94px 94px 72px;
+  grid-template-columns: 22px 1fr 84px 84px 64px;
   align-items: center;
-  gap: 8px;
-  padding: 9px 0;
+  gap: 6px;
+  padding: 6px 0;
   font-family: var(--font-cjk);
   font-size: 15px;
 }
@@ -913,7 +909,7 @@ html, body {
   font-size: 13px;
   font-weight: 500;
   letter-spacing: 0.04em;
-  padding-bottom: 8px;
+  padding-bottom: 5px;
   border-bottom: 1px solid rgba(160, 216, 255, 0.22);
 }
 .maint-row__icon {
@@ -925,6 +921,9 @@ html, body {
 .maint-row__name {
   color: var(--c-text);
   font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .maint-row__date {
   color: var(--c-legible-2);
@@ -932,11 +931,13 @@ html, body {
   font-variant-numeric: tabular-nums;
   letter-spacing: 0.02em;
   font-size: 14px;
+  white-space: nowrap;
 }
 .maint-row__status {
   font-size: 15px;
   font-weight: 600;
   text-align: right;
+  white-space: nowrap;
 }
 /* 狀態無彩：ok 用一般字重、warn 用高亮 + 半粗，語意主要靠「即將到期」四個字。 */
 .maint-row__status--ok   { color: var(--c-text-dim); font-weight: 400; }

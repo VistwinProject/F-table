@@ -286,6 +286,11 @@ function UnknownView({ uid }) {
 
 /* ── Dashboard ──────────────────────────────────────────────────────────────── */
 function DashboardView({ data }) {
+  // ⚠ 固定顯示日檢視。原本這裡有一排「日 / 週 / 月 / 年」，但它是純 <span>、
+  //   沒有任何點擊行為，而桌面是【投影】—— 觀眾切不了，擺著只會誤導，而且那一排
+  //   要吃掉 38px 的高度（面板不能捲動，高度很珍貴）。
+  //   data.trend / trendYMax / TREND_X_LABELS 其他三個區間的資料先留著沒刪，
+  //   之後要做成會動的切換再接回來。
   const range = '日'
   const trend  = data.trend[range]
   const yMax   = data.trendYMax[range]
@@ -317,16 +322,11 @@ function DashboardView({ data }) {
           </div>
         </section>
 
-        {/* Trend */}
-        <section className="device-card">
-          <div className="device-card__head">
-            <div className="device-card__label">{data.metric}趨勢</div>
-            <div className="range-tabs">
-              {['日', '週', '月', '年'].map(r => (
-                <span key={r} className={`range-tab${r === range ? ' active' : ''}`}>{r}</span>
-              ))}
-            </div>
-          </div>
+        {/* Trend —— ⚠ device-card--grow：這一張負責吸收面板剩下的高度。
+            桌面是【投影】，捲不動，所以版面必須自己撐滿又不能溢出；維養排程
+            2～4 列不等，差額就由這張圖吃掉（見 style.css 的 .device-card--grow）。 */}
+        <section className="device-card device-card--grow">
+          <div className="device-card__label">{data.metric}趨勢</div>
           <div className="trend-chart">
             <div className="trend-chart__unit">{data.unit}</div>
             <div className="trend-chart__yaxis">
