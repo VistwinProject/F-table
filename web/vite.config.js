@@ -44,6 +44,10 @@ function tableExportSink() {
 }
 
 export default defineConfig({
+  // ⚠ 相對 base：靜態部署時整包可以放在任何子路徑底下（GitHub Pages 的
+  //    專案站是 /<repo>/）。寫死 '/' 的話 build 出來的資產路徑會全部 404。
+  //    這一版沒有前端路由，所以相對路徑不會有 history fallback 的問題。
+  base: './',
   plugins: [react(), tableExportSink()],
   server: {
     port: 5173,

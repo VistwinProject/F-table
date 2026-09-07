@@ -9,6 +9,7 @@ import MeshBackground from './components/MeshBackground.jsx'
 import GlowLayer from './glow/GlowLayer.jsx'
 import { circlePoints } from './glow/ribbon.js'
 import { attachSimKeys } from './shared/simKeys.js'
+import { socketClass } from './shared/demoSocket.js'
 // ⚠ 版面幾何（左右佔比、圓圈大小、圓圈位置）全部從這裡讀，不要在這個檔案裡
 //   再寫一份數字 —— CSS、連線 SVG 與 WebGL 發光層必須吃到同一組值。
 import {
@@ -81,7 +82,9 @@ export default function App() {
 
   const connect = useCallback(() => {
     if (wsRef.current) wsRef.current.close()
-    const ws = new WebSocket(WS_URL)
+    // ?demo → 假 server（見 shared/demoSocket.js）。靜態部署時沒有真的
+    // ws://localhost:8787，而且 HTTPS 頁面連 ws:// 會被瀏覽器直接擋掉。
+    const ws = new (socketClass())(WS_URL)
     wsRef.current = ws
 
     ws.onopen = () => {
