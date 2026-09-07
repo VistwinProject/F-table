@@ -3,7 +3,6 @@ import InfoPanel from './components/InfoPanel.jsx'
 import CenterHub from './components/CenterHub.jsx'
 import NfcSlot from './components/NfcSlot.jsx'
 import ConnectionStatus from './components/ConnectionStatus.jsx'
-import StudioHeader from './components/StudioHeader.jsx'
 import WelcomeScreen from './components/WelcomeScreen.jsx'
 import TableEditor from './components/TableEditor.jsx'
 import MeshBackground from './components/MeshBackground.jsx'
@@ -265,8 +264,6 @@ export default function App() {
           編輯模式時凍結晃動，不然點是動的擺不準。 */}
       <MeshBackground frozen={edit} />
 
-      <StudioHeader />
-
       <div className="app-body">
         {/* InfoPanel 只用這兩個 prop（見其 signature）。 */}
         <InfoPanel wsStatus={wsStatus} focusedState={focusedState} />
@@ -307,12 +304,6 @@ export default function App() {
 
           <ConnectionStatus wsStatus={wsStatus} />
         </main>
-      </div>
-
-      {/* Bottom frame label */}
-      <div className="frame-footer">
-        <div className="frame-footer__bar" />
-        <div className="frame-footer__text">AI大腦控制塔</div>
       </div>
 
       {/* Welcome overlay — shown until the operator tablet sends a

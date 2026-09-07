@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { cardWeights, fontVars } from '../config/tableTuning.js'
 
 /* ── Mock appliance datasets ───────────────────────────────────────────────────
    Keyed by the `id` from uid-map.json. Each appliance has its own title, today
@@ -300,6 +301,17 @@ function DashboardView({ data }) {
   const deltaSign = data.today.deltaPct < 0 ? '↓' : data.today.deltaPct > 0 ? '↑' : '·'
   const monthPct  = Math.round((data.month.value / data.month.target) * 100)
 
+  // 三張卡把面板剩下的高度【分完】—— 不是「兩張固定 + 圖吃剩下的」。
+  // 桌面是投影，捲不動，所以總高必須恆等於面板高：flex-basis: 0 + 各自的權重
+  // 就是這個等式。權重在編輯模式（鍵盤 e）可調，見 config/tableTuning.js。
+  //
+  // ⚠ flexShrink 留 1、【不要】設 minHeight: 0。設了之後卡片可以被壓到比內容還矮，
+  //   而 .device-dash 是 overflow: hidden —— 被裁掉的那幾列不會有任何跡象。
+  //   留 min-height: auto 的話，權重給太小的卡會停在自己的內容下限、剩下的由
+  //   其他卡分；佔比不準是看得出來的，無聲裁切不是。
+  const W = cardWeights()
+  const share = (w) => ({ flexGrow: w, flexShrink: 1, flexBasis: 0 })
+
   return (
       <div className="device-dash">
 
@@ -307,25 +319,57 @@ function DashboardView({ data }) {
           {data.name}{data.metric}
         </h2>
 
-        {/* Today */}
-        <section className="device-card">
+        {/* 今日 + 本月累積（同一張卡）
+            ⚠ 這兩組數字原本是【兩張】卡。合併不是為了好看，是為了把高度讓給最下面
+              的維養排程：維養是固定高度（最多 4 列 ≈ 232px）又排在最後，面板一旦
+              不夠高，被犧牲的一定是它，而且 .device-dash 是 overflow: hidden ——
+              是【無聲】切掉，現場不會有人發現最後一列不見了。
+              兩張卡各自要 24px 內距 + 22px 標題，再加卡間 10px，合併省下約 100px
+              ＝三列維養。實測 1512×860 原本切掉 57px，合併後不再溢出。 */}
+        <section className="device-card device-card--usage" style={share(W.usage)}>
           <div className="device-card__label">{data.today.label}</div>
           <div className="usage-stat">
             <span className="usage-stat__value">{data.today.value}</span>
             <span className="usage-stat__unit">{data.unit}</span>
+            {/* ⚠ 「較昨日」在【上】、百分比在下 —— DOM 順序就是視覺順序，
+                不是靠 column-reverse 反過來。反過來的話朗讀順序與選取順序會
+                跟看到的相反，而且之後有人要插第三行時會插錯位置。 */}
             <span className={`usage-stat__delta is-${data.today.deltaColor}`}>
+              <span className="usage-stat__delta-label">較昨日</span>
               <span className="usage-stat__delta-pct">
                 {deltaSign} {Math.abs(data.today.deltaPct)}%
               </span>
-              <span className="usage-stat__delta-label">較昨日</span>
             </span>
+          </div>
+
+          <div className="usage-card__rule" />
+
+          {/* 本月累積：降成「一行數字 + 一條進度」的次階寫法。
+              ⚠ 今日的 48px 不能也給本月 —— 兩個 48px 並排在 540px 的面板裡
+                讀起來會分不出哪個是「現在」。階層靠字級，不靠卡片邊界。 */}
+          <div className="cumulative">
+            <div className="cumulative__head">
+              <span className="device-card__label">{data.month.label}</span>
+              <span className="cumulative__value">
+                <b>{data.month.value}</b>
+                <span className="cumulative__target">
+                  {' / '}目標 {data.month.target.toLocaleString()} {data.unit}
+                </span>
+              </span>
+            </div>
+            <div className="cumulative__barrow">
+              <div className="cumulative__bar">
+                <div className="cumulative__fill" style={{ width: `${monthPct}%` }} />
+              </div>
+              <span className="cumulative__pct">{monthPct}%</span>
+            </div>
           </div>
         </section>
 
-        {/* Trend —— ⚠ device-card--grow：這一張負責吸收面板剩下的高度。
-            桌面是【投影】，捲不動，所以版面必須自己撐滿又不能溢出；維養排程
-            2～4 列不等，差額就由這張圖吃掉（見 style.css 的 .device-card--grow）。 */}
-        <section className="device-card device-card--grow">
+        {/* Trend —— 這張卡以前負責「吸收剩下的高度」，現在改成跟另外兩張
+            一起按權重分（見上面 share 的說明）。圖本身仍然是卡片內唯一會伸縮的
+            元素：卡分到多少，扣掉標題與 x 軸就是圖的高度。 */}
+        <section className="device-card device-card--chart" style={share(W.trend)}>
           <div className="device-card__label">{data.metric}趨勢</div>
           <div className="trend-chart">
             <div className="trend-chart__unit">{data.unit}</div>
@@ -347,31 +391,8 @@ function DashboardView({ data }) {
           </div>
         </section>
 
-        {/* Monthly cumulative */}
-        <section className="device-card">
-          <div className="device-card__label">{data.month.label}</div>
-          <div className="cumulative">
-            <div className="cumulative__head">
-              <div className="usage-stat">
-                <span className="usage-stat__value">{data.month.value}</span>
-                <span className="usage-stat__unit">{data.unit}</span>
-              </div>
-              <div className="cumulative__target">
-                目標 {data.month.target.toLocaleString()} {data.unit}
-              </div>
-            </div>
-            <div className="cumulative__bar">
-              <div className="cumulative__fill" style={{ width: `${monthPct}%` }} />
-            </div>
-            <div className="cumulative__meta">
-              <span>目標 達 成 限</span>
-              <span className="cumulative__pct">{monthPct}%</span>
-            </div>
-          </div>
-        </section>
-
         {/* Maintenance */}
-        <section className="device-card">
+        <section className="device-card device-card--maint" style={share(W.maint)}>
           <div className="device-card__label">維養排程</div>
           <div className="maint-table">
             <div className="maint-row maint-row--head">
@@ -453,8 +474,12 @@ export default function InfoPanel({ wsStatus, focusedState }) {
     body = <DashboardView data={data} />
   }
 
+  // 字級走 CSS 變數，不走 inline font-size ——
+  // ⚠ 面板裡有十幾個字級（單位、增減、座標軸、日期…），它們是【互相推導】的
+  //   （見 style.css 的 calc）。一個一個 inline 設會讓那層關係散在 JSX 裡，
+  //   之後改一個就得改十個。變數只掛在根節點，往下自動繼承。
   return (
-    <div className="info-panel">
+    <div className="info-panel" style={fontVars()}>
       <FadeSwap viewKey={viewKey}>{body}</FadeSwap>
     </div>
   )

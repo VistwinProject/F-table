@@ -125,35 +125,6 @@ html, body {
     inset 0 0 26px rgba(160, 216, 255, 0.05);
 }
 
-.frame-footer {
-  position: absolute;
-  bottom: 14px;
-  left: 50%;
-  transform: translateX(-50%);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
-  pointer-events: none;
-  z-index: 10;
-}
-
-.frame-footer__text {
-  font-family: var(--font-cjk);
-  font-size: 22px;
-  font-weight: 600;
-  letter-spacing: 0.18em;
-  color: rgba(255, 255, 255, 0.75);
-}
-
-.frame-footer__bar {
-  width: 32px;
-  height: 2px;
-  border-radius: 1px;
-  background: var(--glow);
-  box-shadow: 0 0 8px rgba(160, 216, 255, 0.55);
-}
-
 /* ── 背景漸層 ─────────────────────────────────────────────────────────────────
    三個色點各自往外散成一團柔光，疊起來就是任意形狀漸層（見 MeshBackground.jsx）。
    ⚠ 這一層是 .app-frame 的底（z-index 0），.app-body 是 1 —— 順序不要調換，
@@ -191,47 +162,6 @@ html, body {
   align-items: stretch;
 }
 
-/* ── Studio Header ───────────────────────────────────────────────────────────── */
-.studio-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 20px 0 48px;
-  height: 40px;
-  min-height: 40px;
-  background: transparent;
-  border-bottom: 1px solid var(--glow-dim);
-  flex-shrink: 0;
-  z-index: 10;
-  position: relative;
-}
-
-.studio-header__brand {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.studio-header__wordmark {
-  font-family: var(--font-cjk);
-  font-size: 22px;
-  font-weight: 700;
-  color: var(--c-text);
-  letter-spacing: 0.06em;
-}
-
-.studio-header__slash { color: rgba(255, 255, 255, 0.20); font-weight: 300; }
-
-.studio-header__sub {
-  font-family: var(--font-cjk);
-  font-size: 16px;
-  color: var(--c-text-mute);
-  letter-spacing: 0.04em;
-}
-
-.studio-header__demo  { margin-left: 4px; }
-.studio-header__phase { margin-left: 2px; }
-
 /* ── Info Panel — wireframe HUD, rounded rect ──────────────────────────────── */
 /* ⚠ 寬度是【佔比】而不是 clamp(420px, 32vw, 540px) —— 編輯模式（鍵盤 e）要能
    直接調左右比例，而這一端是固定 1080p 投影，不需要 clamp 的彈性。
@@ -249,7 +179,28 @@ html, body {
   -webkit-backdrop-filter: var(--glass-blur);
   border: 1px solid var(--glass-border);
   border-radius: 18px;
-  box-shadow: var(--glass-shadow);
+  /* ⚠ 這裡【不用】var(--glass-shadow) —— 刻意把它的第一層
+       `0 10px 30px rgba(0, 0, 0, 0.55)` 拿掉，其餘三層原樣照抄。
+     原因：那層黑投影是為了「純深色平底」設計的（近黑底上壓 40% 黑 = 看不見）。
+     這一端加了背景漸層之後，面板周圍的底有了亮度與顏色，同一條黑帶就浮出來，
+     變成資訊面板與感應區之間一條很硬的分界。實測遮蔽率：
+       下緣外 0px 40% / 10px 27% / 20px 13% / 30px 5%
+       右側外 0px 27% / 10px 13% / 20px 5%
+     （下緣是右側的 1.5 倍，因為那個 10px 是向下偏移 —— 看起來就像面板底下
+       墊了一塊深色底。）
+     順帶一提：CSS box-shadow 的【第一層畫在最上面】，所以原本那圈藍色 rim
+     一直被黑色壓著，本來該是「發光的邊」變成「暗邊帶一點藍」。拿掉之後才是
+     原本設計的樣子。
+   ⚠ 這是【桌面專屬】的覆寫。--glass-shadow 由 F-wall/sync-tokens.mjs 產生
+     （黑色那層寫死在產生器裡，fx.js 沒有這個旋鈕），牆面是黑底、看不出差別，
+     所以沒有動三端共用的來源。
+   ⚠ 代價：下面三層是從 --glass-shadow 抄來的。牆面那邊如果調了
+     glass.haloBlur / glass.rimOpacity（fx.js），這裡要手動同步 ——
+     sync-tokens 只會改 GLOW-TOKENS 區塊裡的變數，不會碰到這條規則。 */
+  box-shadow:
+    0 0 14px rgba(160, 216, 255, 0.336),
+    inset 0 1px 0 rgba(255, 255, 255, 0.42),
+    inset 0 0 12px rgba(255, 255, 255, 0.08);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -257,8 +208,18 @@ html, body {
 }
 
 /* ── Main / hub area — open canvas, no frame ─────────────────────────────────── */
+/* ⚠ padding-top: 40px 是【補回】原本頂部 header 佔掉的高度。
+     那條 header 已經刪了（它只剩「撐出留白」一個作用，而那個留白讓左側資訊面板
+     上方 57px、下方 17px，看起來是歪的）。刪掉之後 .app-body 長高 40px：
+     資訊面板上下都變成 17px ✓，但右邊的感應區【不該】跟著長 ——
+     .hub-container 是 .main 的 90% 高，一長高九個感應圈與中樞就整組往下移位，
+     那是已經調好的幾何。這個 padding 讓 .main 的內容盒維持原本的高度，
+     圓圈位置逐像素不變。
+   ⚠ 想把這 40px 也讓給感應區（圓圈會散開約 4%）就把這行刪掉，然後用編輯模式
+     （鍵盤 e）重新對一次位置。 */
 .main {
   flex: 1;
+  padding-top: 40px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -514,8 +475,10 @@ html, body {
 /* ── Device dashboard panel ──────────────────────────────────────────────────────
    ⚠ 這一整塊【不捲動】。F 區只有 iPad 是可以真的用手滑的，牆面與桌面都是投影 ——
      投影上「往下還有東西」等於那些東西不存在。所以版面必須自己剛好填滿：
-     留白收緊 + 趨勢圖吸收差額（.device-card--grow），overflow 用 hidden 是最後
-     一道保險，不是版面手段。 */
+     三張卡（用電量／趨勢圖／維養排程）按權重把高度分完，總和恆等於面板高度，
+     權重在編輯模式（鍵盤 e）可調 —— 見 InfoPanel.jsx 的 share()。
+     overflow 用 hidden 是最後一道保險，不是版面手段：真的溢出時它會【無聲】
+     裁掉最下面幾列，所以編輯面板會即時把溢出的 px 數標成警告色。 */
 .device-dash {
   flex: 1;
   min-height: 0;
@@ -567,14 +530,14 @@ html, body {
 
 .idle-card__title {
   font-family: var(--font-cjk);
-  font-size: 20px;
+  font-size: calc(var(--fs-title, 25px) * 0.8);
   font-weight: 600;
   color: var(--c-text);
   letter-spacing: 0.06em;
 }
 .idle-card__hint {
   font-family: var(--font-cjk);
-  font-size: 15px;
+  font-size: var(--fs-body, 15px);
   color: var(--c-legible-2);
   letter-spacing: 0.04em;
   line-height: 1.7;
@@ -605,17 +568,23 @@ html, body {
   display: flex;
   justify-content: space-between;
   font-family: var(--font-cjk);
-  font-size: 15px;
+  font-size: var(--fs-body, 15px);
   letter-spacing: 0.04em;
 }
 .idle-foot__key { color: var(--c-legible-2); }
-.idle-foot__val { color: var(--c-text); font-size: 14px; font-weight: 500; font-variant-numeric: tabular-nums; }
+.idle-foot__val { color: var(--c-text); font-size: calc(var(--fs-body, 15px) - 1px); font-weight: 500; font-variant-numeric: tabular-nums; }
 .idle-foot__val.is-ok  { color: var(--green); }
 .idle-foot__val.is-err { color: var(--red); }
 
+/* ⚠ 以下所有 font-size 都掛在 --fs-* 四個變數上（由 InfoPanel 的 fontVars()
+     寫在 .info-panel 上，編輯模式可調）。沒有變數時 fallback 就是原本的數字，
+     所以拿掉編輯模式這個檔案仍然自成一格。
+   ⚠ 推導出來的字級一律用 calc(var(--fs-body) ± n)，不要各自寫死 ——
+     那層比例關係（單位比數字小多少、日期比項目小 1px…）是設計的一部分，
+     散成十幾個常數之後就沒人敢動了。 */
 .device-dash__title {
   font-family: var(--font-cjk);
-  font-size: 25px;
+  font-size: var(--fs-title, 25px);
   font-weight: 800;
   letter-spacing: 0.04em;
   color: var(--c-text);
@@ -637,17 +606,14 @@ html, body {
   gap: 8px;
 }
 
-/* 吸收面板剩下的高度的那一張（趨勢圖）。維養排程 2～4 列不等，
-   差額全部由它吃，其餘卡片維持固定高度 —— 這樣不管哪一台家電，
-   面板都是剛好填滿的，不會有人多人少的空洞。
-   ⚠ 不要在這裡寫 min-height: 0。寫了之後這張卡可以被 flex 壓到比內容還矮，
-     而圖本身有自己的 min-height 撐著，被犧牲掉的就是下面的 x 軸標籤 ——
-     版面看起來「沒有溢出」，其實是無聲裁掉了（實際踩過：1440×810 時被壓 47px）。
-     留 min-height: auto 的話，這張卡最矮就是「標題 + 圖的下限 + x 軸」，
-     真的塞不下時會整個溢出面板底部，那是看得見的失敗，比悄悄裁掉好。 */
-.device-card--grow {
-  flex: 1 1 auto;
-}
+/* ⚠ 三張卡的 flex 是【行內】給的（InfoPanel.jsx 的 share()），因為權重是
+     編輯模式可調的值。這裡不要再寫 flex，會蓋掉行內值也會蓋不掉行內值 ——
+     兩邊各寫一份遲早不同步。
+   ⚠ 也不要在這裡補 min-height: 0。理由同 InfoPanel.jsx 的註解：
+     卡片被壓到比內容矮的時候，.device-dash 的 overflow: hidden 會【無聲】裁掉
+     最下面幾列（實際踩過：1440×810 時趨勢圖的 x 軸被壓掉 47px）。
+     留 min-height: auto，權重給太小的卡會停在自己的內容下限，佔比失準是
+     看得見的失敗，比悄悄裁掉好。編輯面板會即時把「要求 % / 實際 px」並排顯示。 */
 
 /* ── Legibility overrides (info panel only) ───────────────────────────────────
    Showcase audience skews older / presbyopic, and projection washes out low
@@ -657,7 +623,7 @@ html, body {
 
 .device-card__label {
   font-family: var(--font-cjk);
-  font-size: 16px;
+  font-size: var(--fs-label, 16px);
   font-weight: 600;
   letter-spacing: 0.04em;
   color: var(--c-legible-2);
@@ -672,7 +638,7 @@ html, body {
 }
 .usage-stat__value {
   font-family: var(--font-hud);
-  font-size: 48px;
+  font-size: var(--fs-stat, 48px);
   font-weight: 600;
   letter-spacing: 0.01em;
   color: var(--c-text);
@@ -681,26 +647,36 @@ html, body {
 }
 .usage-stat__unit {
   font-family: var(--font-hud);
-  font-size: 18px;
+  font-size: calc(var(--fs-stat, 48px) * 0.375);
   font-weight: 500;
   color: var(--c-text-mute);
   letter-spacing: 0.04em;
 }
+/* 「較昨日」在上、百分比在下（DOM 順序就是視覺順序，見 InfoPanel.jsx）。
+   ⚠ align-self 一定要覆寫掉 .usage-stat 的 align-items: baseline。
+     baseline 對齊的是這一疊的【第一行】—— 也就是「較昨日」那四個字，
+     結果整疊被往下推 19px，百分比整個掉到主數字下緣以外，看起來是垂下來的。
+     last baseline 改成用【最後一行】對齊，百分比就回到主數字的基線上
+     （實測誤差 1px），順帶把這一列的高度從 67px 收回 49px。
+   ⚠ 兩行都要留：不支援 last baseline 的瀏覽器會把那一行整條丟掉，
+     退回 flex-end（本例數字剛好相同，但字級一改就會分家 —— 字級是可調的）。 */
 .usage-stat__delta {
   margin-left: auto;
   display: flex;
   flex-direction: column;
   align-items: flex-end;
+  align-self: flex-end;
+  align-self: last baseline;
   line-height: 1.15;
 }
 .usage-stat__delta-pct {
   font-family: var(--font-hud);
-  font-size: 19px;
+  font-size: calc(var(--fs-body, 15px) + 4px);
   font-weight: 600;
 }
 .usage-stat__delta-label {
   font-family: var(--font-cjk);
-  font-size: 15px;
+  font-size: var(--fs-body, 15px);
   font-weight: 500;
   color: var(--c-legible-2);
   letter-spacing: 0.04em;
@@ -715,8 +691,9 @@ html, body {
   position: relative;
   display: grid;
   grid-template-columns: 36px 1fr;
-  /* ⚠ 高度不寫死：由 .device-card--grow 分到多少就用多少（見上面的說明）。
-     min-height 是下限，避免維養列數多的家電把圖壓成一條縫。 */
+  /* ⚠ 高度不寫死：卡片按權重分到多少，扣掉標題與 x 軸就是圖的高度。
+     min-height 是下限，避免權重調太小時把圖壓成一條縫 ——
+     實際的下限通常是 y 軸那六個刻度標籤（約 130px），比這個數字大。 */
   flex: 1 1 auto;
   min-height: 96px;
   margin-top: 4px;
@@ -725,7 +702,7 @@ html, body {
   position: absolute;
   top: -2px; left: 0;
   font-family: var(--font-hud);
-  font-size: 13px;
+  font-size: calc(var(--fs-body, 15px) - 2px);
   color: var(--c-legible-2);
   letter-spacing: 0.04em;
 }
@@ -734,7 +711,7 @@ html, body {
   flex-direction: column;
   justify-content: space-between;
   font-family: var(--font-hud);
-  font-size: 13px;
+  font-size: calc(var(--fs-body, 15px) - 2px);
   color: var(--c-legible-2);
   padding: 14px 0 0;
   text-align: right;
@@ -769,9 +746,24 @@ html, body {
   padding-left: 40px;
   margin-top: 4px;
   font-family: var(--font-hud);
-  font-size: 13px;
+  font-size: calc(var(--fs-body, 15px) - 2px);
   color: var(--c-legible-2);
   font-variant-numeric: tabular-nums;
+}
+
+/* ── 今日 + 本月累積的分隔線 ──
+   ⚠ 這條線取代的是「兩張卡之間的縫」。合併的理由寫在 InfoPanel.jsx 的註解裡：
+     高度是留給維養排程的，不是省版面。 */
+/* ⚠ margin: auto 0 不是「加空白」，是「吸收空白」：卡片高度現在由編輯模式的
+     權重決定（見 InfoPanel 的 share()），分到的高度多半比內容多。auto 邊界會把
+     多出來的高度【平均】分到分隔線的上下兩側，今日與本月各自置中在自己那半邊 ——
+     多餘的高度不會全部掉到卡片底部變成一塊空的。
+   ⚠ 不要改成固定 margin（例如 2px 0）。固定值是【額外】加上去的，卡片最緊的時候
+     （1512×860 實測）就差那 4px 會把維養排程的最後一列擠出可視範圍。 */
+.usage-card__rule {
+  height: 1px;
+  background: rgba(160, 216, 255, 0.16);
+  margin: auto 0;
 }
 
 /* ── Monthly cumulative ── */
@@ -780,23 +772,59 @@ html, body {
   flex-direction: column;
   gap: 8px;
 }
+/* ⚠ line-height: 1 是為了讓橫線【看起來】上下等距，不是為了縮高度。
+     .usage-card__rule 的 margin: auto 0 已經把多餘高度平均分到上下兩側，
+     所以「盒子」的間距本來就相等（實測 28.9 / 28.9）—— 但眼睛看的是【字】：
+     這一列是 24px 數字與 16px 標題基線對齊，行高 normal 讓盒子上緣比字的
+     最高點多出約 10px 的空氣，橫線上方卻只有 3.7px（那裡是數字的下緣）。
+     結果就是實際墨水間距 32.5 上 / 42.7 下，差 10px，橫線看起來偏上。
+     行高收成 1 之後變成 38.5 / 36.7（差 1.8px，看不出來）。
+   ⚠ 用行高不用固定 margin：行高是【比例】，字級滑桿一調就自己跟著走；
+     固定 margin 只在目前這組字級是對的。 */
 .cumulative__head {
   display: flex;
-  align-items: flex-end;
+  align-items: baseline;
   justify-content: space-between;
   gap: 10px;
+  line-height: 1;
+}
+/* ⚠ 標題可縮可截、數字一律不縮不換行：面板窄下來的時候（1512 寬時只有 421px）
+     先犧牲「本月累積用電量」幾個字，也不要讓數字換行 —— 換行就是多一列高度，
+     而多出來的那一列又會從維養排程扣回去。 */
+.cumulative__head .device-card__label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.cumulative__value {
+  flex: none;
+  white-space: nowrap;
+  font-family: var(--font-hud);
+  color: var(--c-text);
+  font-variant-numeric: tabular-nums;
+}
+.cumulative__value b {
+  font-size: calc(var(--fs-stat, 48px) * 0.5);
+  font-weight: 600;
+  letter-spacing: 0.01em;
 }
 .cumulative__target {
   font-family: var(--font-cjk);
-  font-size: 15px;
+  font-size: var(--fs-body, 15px);
   font-weight: 500;
   color: var(--c-legible-2);
-  white-space: nowrap;
-  padding-bottom: 6px;
+}
+/* 進度條與百分比同一列 —— 原本百分比自己佔一列（.cumulative__meta），
+   那一列連同「目標 達 成 限」的說明文字一起拿掉了：目標值已經寫在上面那行。 */
+.cumulative__barrow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 .cumulative__bar {
   position: relative;
-  width: 100%;
+  flex: 1 1 auto;
   height: 8px;
   background: rgba(255, 255, 255, 0.06);
   border-radius: 3px;
@@ -809,26 +837,31 @@ html, body {
   border-radius: 3px;
   transition: width 0.6s var(--ease);
 }
-.cumulative__meta {
-  display: flex;
-  justify-content: space-between;
-  font-family: var(--font-hud);
-  font-size: 14px;
-  color: var(--c-legible-2);
-  letter-spacing: 0.04em;
-}
 .cumulative__pct {
+  flex: none;
+  font-family: var(--font-hud);
+  font-size: var(--fs-body, 15px);
   color: var(--c-text);
   font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.04em;
 }
 
 /* ── Maintenance schedule table ── */
+/* ⚠ 表格要撐滿卡片、每一列平分多出來的高度 —— 卡片高度由編輯模式的權重決定，
+     內容（2～4 列）填不滿是常態。不撐滿的話多出來的高度會變成卡片底部一塊空白，
+     而 2 列的家電（燈、插座、窗簾）那塊空白會很大。
+   ⚠ 列只給 flex-grow，【不給】flex-shrink：可以被拉高，不可以被壓矮。
+     壓矮的話文字會溢出到隔壁列上，那比佔比失準難看得多。 */
 .maint-table {
   display: flex;
   flex-direction: column;
   gap: 0;
   margin-top: 0;
+  flex: 1 1 auto;
 }
+.maint-row { flex: 0 0 auto; }
+.maint-row:not(.maint-row--head) { flex-grow: 1; }
 /* ⚠ 欄寬是照「內容真正需要多少」給的，不是隨手給的整數：
      日期 2026/01/10 在 14px 的 HUD 字型下約 80px、狀態「即將到期」在 15px 下約 60px。
      原本給 94/94/72 + gap 8，固定欄就吃掉 314px —— 面板在 1440 寬時只有 460px，
@@ -843,14 +876,14 @@ html, body {
   gap: 6px;
   padding: 6px 0;
   font-family: var(--font-cjk);
-  font-size: 15px;
+  font-size: var(--fs-body, 15px);
 }
 .maint-row + .maint-row {
   border-top: 1px solid rgba(255, 255, 255, 0.05);
 }
 .maint-row--head {
   color: var(--c-legible-2);
-  font-size: 13px;
+  font-size: calc(var(--fs-body, 15px) - 2px);
   font-weight: 500;
   letter-spacing: 0.04em;
   padding-bottom: 5px;
@@ -874,11 +907,11 @@ html, body {
   font-family: var(--font-hud);
   font-variant-numeric: tabular-nums;
   letter-spacing: 0.02em;
-  font-size: 14px;
+  font-size: calc(var(--fs-body, 15px) - 1px);
   white-space: nowrap;
 }
 .maint-row__status {
-  font-size: 15px;
+  font-size: var(--fs-body, 15px);
   font-weight: 600;
   text-align: right;
   white-space: nowrap;
@@ -1029,6 +1062,18 @@ html, body {
   flex-direction: column-reverse;
 }
 .te-panel--min { width: auto; }
+/* 按住 h 看穿（見 TableEditor 的說明）。⚠ 用 opacity 不要用 display/visibility：
+   正在拖的滑桿必須留在 DOM 上，否則放開 h 之後 pointer capture 已經斷了。 */
+.te-panel--peek { opacity: 0.06; pointer-events: none; }
+
+/* 標題列＝拖曳把手（按鈕在 JSX 裡放行了）。
+   ⚠ user-select: none 是必要的：不擋的話拖曳會變成選取「版面編輯」四個字，
+     游標離開面板時還會一路反白到下面的畫面。 */
+.te-head--drag {
+  cursor: move;
+  user-select: none;
+  touch-action: none;
+}
 
 .te-head {
   display: flex;
@@ -1041,7 +1086,17 @@ html, body {
 .te-head strong { font-weight: 600; letter-spacing: 0.5px; }
 .te-spacer { flex: 1; }
 
-.te-body { padding: 10px 12px 4px; }
+/* ⚠ 這一格【可以】捲動 —— 它是開發工具不是投影內容。面板由下往上長，
+     控制項一多就會頂出畫面外；剩下的用捲的。
+     ⚠ 上限要扣掉面板【當下】的下緣位置（--te-bottom，拖曳時由 JSX 寫入），
+       不能寫死 14px：把面板往上搬之後可用高度就變少了。
+     （投影的資訊面板不能捲，那是另一回事，見 .device-dash 的註解。） */
+.te-body {
+  padding: 10px 12px 4px;
+  max-height: calc(100vh - var(--te-bottom, 14px) - 62px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
 
 .te-panel button,
 .te-export button {
@@ -1081,6 +1136,10 @@ html, body {
 }
 
 .te-dim { color: rgba(255, 255, 255, 0.5); }
+/* 溢出／卡在下限的提示。⚠ 用暖色是刻意的：這個面板其餘全部是青色，
+   唯一該讓人停下來的訊息不能跟其他數字長得一樣。 */
+.te-warn { color: #ffb454; font-weight: 600; }
+.te-slider b.te-warn { font-weight: 600; }
 .te-hint { margin: 4px 0 0; line-height: 1.5; }
 
 /* 背景色點的把手層。⚠ 蓋在整個 .app-frame 上（色點的座標基準就是它），
@@ -1115,7 +1174,8 @@ html, body {
   top: calc(100% + 5px);
 }
 
-/* 分隔一段（背景漸層那組的標題列） */
+/* 分隔一段（每組控制項的標題列） */
+.te-sep strong { font-weight: 600; letter-spacing: 0.03em; }
 .te-sep {
   display: flex;
   align-items: center;

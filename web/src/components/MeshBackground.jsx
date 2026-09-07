@@ -18,6 +18,22 @@ import { bgConf } from '../config/tableTuning.js'
 
 // 每個點各自的繞圈週期（秒）與相位。刻意取互質一點的數字 ——
 // 週期太接近的話三個點會週期性地同時回到原位，看起來就有「一拍」。
+// 徑向衰減的取樣點。
+// ⚠ 【不要】改回「顏色 0% → 透明 100%」的兩段式寫法。那是【線性】斜坡：
+//   半徑內斜率固定、半徑外是 0，交界處是一個折角。亮度本身是連續的，但人眼對
+//   「斜率的不連續」極度敏感（Mach band）—— 結果就是在色團邊緣看到一條根本
+//   沒有畫出來的邊。實測：折角處亮度斜率從 0 跳到 3.36（每 100px），那條線
+//   正好落在資訊面板右側，看起來就是「面板邊緣有一塊深色塊」。
+//   用 smootherstep（3t²−2t³）取樣之後邊緣斜率趨近 0，折角就沒了。
+// ⚠ 取樣點刻意【不等距】—— 越靠近邊緣越密。CSS 的漸層停駐點之間是線性內插，
+//   等距取樣在最後一段仍然會留下可見的折角。
+const STOPS = [0, 0.15, 0.3, 0.45, 0.6, 0.72, 0.82, 0.9, 0.94, 0.97, 0.99, 1]
+const ease = (t) => 1 - (3 * t * t - 2 * t * t * t)
+const hex2 = (a) => Math.round(Math.min(1, Math.max(0, a)) * 255).toString(16).padStart(2, '0')
+// #RRGGBB → 一串 #RRGGBBAA 停駐點（<input type="color"> 一定給 6 碼，可以直接接）
+const falloff = (color) =>
+  STOPS.map((t) => `${color}${hex2(ease(t))} ${+(t * 100).toFixed(1)}%`).join(', ')
+
 const ORBITS = [
   { px: 29, py: 37, phase: 0 },
   { px: 34, py: 26, phase: 2.1 },
@@ -80,7 +96,7 @@ export default function MeshBackground({ frozen = false }) {
             //   色團就被拉成橢圓。短邊基準才是「圓形往外散」。
             width: `${spread * 2}vmin`,
             height: `${spread * 2}vmin`,
-            background: `radial-gradient(circle closest-side, ${p.color} 0%, ${p.color}00 100%)`,
+            background: `radial-gradient(circle closest-side, ${falloff(p.color)})`,
           }}
         />
       ))}
