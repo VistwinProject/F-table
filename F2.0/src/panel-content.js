@@ -15,10 +15,10 @@ export const TABLE_CONTENT={
   light:{heading:'客廳燈開啟',rows:[['亮度','70%'],['今日使用','5.2 小時']]},
   ac:{heading:'客廳降溫中',rows:[['目前','28°C → 目標 25°C'],['','舒適溫控啟動']]},
   hrv:{heading:'新風換氣中',rows:[['CO₂','912 ppm'],['風量','中']]},
-  bathfan:{heading:'浴室預熱中',rows:[['目前','18°C → 目標 24°C'],['','溫差保護啟動']]},
+  bathfan:{heading:'浴室預熱中',rows:[['目前','18°C → 目標 24°C'],['剩餘時間','15 分鐘'],['','溫差保護啟動中']]},
   sensor:{heading:'空氣品質良好',rows:[['濕度','72%'],['PM2.5','8']]},
   dehum:{heading:'除濕中',rows:[['目前','72% → 目標 60%'],['','濕度控制啟動']]},
-  purifier:{heading:'空氣淨化中',rows:[['目前 PM2.5','18 → 目標 7.9 以下'],['','淨化模式啟動']]},
+  purifier:{heading:'空氣淨化中',rows:[['目前 PM2.5','18 → 目標 7.9 以下'],['','自動模式 · 偵測粉塵變化']]},
   curtain:{heading:'客廳窗簾關閉 80%',rows:[['','西曬遮陽中']]},
 };
 // Compact iPad summaries use the same approved detail data.
@@ -30,7 +30,7 @@ export const IPAD_SUMMARY={
 // Client-approved red-box wall copy; keep iPad data independent.
 export const WALL_PANEL_CONTENT={
   ...PANEL_CONTENT,
-  ac:{...PANEL_CONTENT.ac,rows:PANEL_CONTENT.ac.rows.map(([key,value])=>[key,key==='下次維養'?'2026/09':value])},
+  ac:{...PANEL_CONTENT.ac,rows:PANEL_CONTENT.ac.rows.map(([key,value])=>[key,key==='下次維養'?'2026/10月':value])},
   purifier:{label:'空氣清淨機',rows:[['濾網壽命','63%'],['累積運轉','2,830 小時'],['','預估 98 天後更換濾網']]},
   bathfan:{label:'浴室暖風機',rows:[['累積運轉','820 小時'],['平均升溫','5.8°C'],['下次維養','2027/06'],['','加熱模組、排風系統檢查']]},
 };

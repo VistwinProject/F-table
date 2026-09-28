@@ -213,8 +213,9 @@ export function createRestoredOrb({canvas,status,onReady,onError}) {
 
       function frame(now) {
         if (stopped) return;
+        if (document.hidden) {lastFrameAt=null;animationFrame=requestAnimationFrame(frame);return;}
         try {
-          const dpr = Math.min(window.devicePixelRatio || 1, 2);
+          // Original high-resolution buffer: 1600 pixels on the shorter edge.
           const width = Math.max(1, Math.floor(1600 * canvas.clientWidth / Math.min(canvas.clientWidth, canvas.clientHeight)));
           const height = Math.max(1, Math.floor(1600 * canvas.clientHeight / Math.min(canvas.clientWidth, canvas.clientHeight)));
           if (canvas.width !== width || canvas.height !== height) {

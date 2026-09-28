@@ -8,6 +8,7 @@ let lastMotion=0,seenNfc=0,turn=0,turnTarget=0,spin=0,spinSpeed=0;
 const reducedMotion=matchMedia('(prefers-reduced-motion: reduce)');
 function update(){
   frame=requestAnimationFrame(update);
+  if(document.hidden){lastMotion=0;return;}
   const host=[...hosts].find(item=>item.isVisible())||hosts.values().next().value;
   if(!host||!orb)return;
   if(container.parentElement!==host.sphere){

@@ -1,34 +1,106 @@
-// User-provided transcripts aligned to local audio word timestamps. No global timing offset.
+// User-provided transcripts aligned to local audio. Each track declares its timing method.
 export const AUDIO_CAPTIONS = {
-  "purifier": {
-    "text": "空氣清淨機正以自動模式運轉，隨時偵測粉塵變化。目前 PM2.5 僅有 8，空氣清爽，濾網壽命還有65%。",
-    "duration": 12.25,
-    "timing": "speech-word-aligned",
+  "intro": {
+    "text": "隱藏在牆後的無形神經，早已將家裡所有的設備串聯在一起。它就像一位永不退休、最懂這棟房子的「無形管家」，不只看得到數據，更能為您正確預判問題，在設備發生異常或損壞之前，它已提早妥善打理好一切。您不需要去研究複雜的系統。只需透過手機，就能一目了然看懂「家的健康與維養報告」。家，終於成為懂你、照顧你、持續進化的生活夥伴。",
+    "duration": 35.82,
+    "timing": "speech-pause-aligned",
     "cues": [
       {
         "start": 0,
-        "end": 3.4,
+        "end": 2.58,
+        "text": "隱藏在牆後的無形神經，"
+      },
+      {
+        "start": 2.58,
+        "end": 6.33,
+        "text": "早已將家裡所有的設備串聯在一起。"
+      },
+      {
+        "start": 6.33,
+        "end": 8.43,
+        "text": "它就像一位永不退休、"
+      },
+      {
+        "start": 8.43,
+        "end": 10.97,
+        "text": "最懂這棟房子的「無形管家」，"
+      },
+      {
+        "start": 10.97,
+        "end": 12.9,
+        "text": "不只看得到數據，"
+      },
+      {
+        "start": 12.9,
+        "end": 15.63,
+        "text": "更能為您正確預判問題，"
+      },
+      {
+        "start": 15.63,
+        "end": 19,
+        "text": "在設備發生異常或損壞之前，"
+      },
+      {
+        "start": 19,
+        "end": 21.88,
+        "text": "它已提早妥善打理好一切。"
+      },
+      {
+        "start": 21.88,
+        "end": 24.95,
+        "text": "您不需要去研究複雜的系統。"
+      },
+      {
+        "start": 24.95,
+        "end": 26.51,
+        "text": "只需透過手機，"
+      },
+      {
+        "start": 26.51,
+        "end": 30.46,
+        "text": "就能一目了然看懂「家的健康與維養報告」。"
+      },
+      {
+        "start": 30.46,
+        "end": 33.39,
+        "text": "家，終於成為懂你、照顧你、"
+      },
+      {
+        "start": 33.39,
+        "end": 35.82,
+        "text": "持續進化的生活夥伴。"
+      }
+    ]
+  },
+  "purifier": {
+    "text": "空氣清淨機正以自動模式運轉，同時偵測粉塵變化。目前 PM2.5 為 18，目標7.9以下，濾網壽命還有63%。",
+    "duration": 12.81,
+    "timing": "speech-pause-aligned",
+    "cues": [
+      {
+        "start": 0,
+        "end": 2.94,
         "text": "空氣清淨機正以自動模式運轉，"
       },
       {
-        "start": 3.4,
-        "end": 5.68,
-        "text": "隨時偵測粉塵變化。"
+        "start": 2.94,
+        "end": 5.37,
+        "text": "同時偵測粉塵變化。"
       },
       {
-        "start": 5.68,
-        "end": 8.28,
-        "text": "目前 PM2.5 僅有 8，"
+        "start": 5.37,
+        "end": 8.25,
+        "text": "目前 PM2.5 為 18，"
       },
       {
-        "start": 8.28,
-        "end": 9.56,
-        "text": "空氣清爽，"
+        "start": 8.25,
+        "end": 10.09,
+        "text": "目標7.9以下，"
       },
       {
-        "start": 9.56,
-        "end": 12.25,
-        "text": "濾網壽命還有65%。"
+        "start": 10.09,
+        "end": 12.81,
+        "text": "濾網壽命還有63%。"
       }
     ]
   },
@@ -124,34 +196,44 @@ export const AUDIO_CAPTIONS = {
     ]
   },
   "bathfan": {
-    "text": "主衛暖風機運轉中，設定 28 度，剩餘 12 分鐘。它會在您沐浴前預先暖房、帶走濕氣，本月已為您運轉 34 次。",
-    "duration": 13.41,
-    "timing": "speech-word-aligned",
+    "text": "浴室暖風機運轉中，目前18度，目標24度，剩餘 15 分鐘。它會在您沐浴前預先暖房、溫差保護啟動中，本月累積運轉820小時。",
+    "duration": 15.93,
+    "timing": "speech-pause-aligned",
     "cues": [
       {
         "start": 0,
-        "end": 2,
-        "text": "主衛暖風機運轉中，"
+        "end": 2.27,
+        "text": "浴室暖風機運轉中，"
       },
       {
-        "start": 2,
-        "end": 3.82,
-        "text": "設定 28 度，"
+        "start": 2.27,
+        "end": 3.71,
+        "text": "目前18度，"
       },
       {
-        "start": 3.82,
-        "end": 5.58,
-        "text": "剩餘 12 分鐘。"
+        "start": 3.71,
+        "end": 5.26,
+        "text": "目標24度，"
       },
       {
-        "start": 5.58,
-        "end": 9.92,
-        "text": "它會在您沐浴前預先暖房、帶走濕氣，"
+        "start": 5.26,
+        "end": 7.27,
+        "text": "剩餘 15 分鐘。"
       },
       {
-        "start": 9.92,
-        "end": 13.41,
-        "text": "本月已為您運轉 34 次。"
+        "start": 7.27,
+        "end": 10.62,
+        "text": "它會在您沐浴前預先暖房、"
+      },
+      {
+        "start": 10.62,
+        "end": 12.56,
+        "text": "溫差保護啟動中，"
+      },
+      {
+        "start": 12.56,
+        "end": 15.93,
+        "text": "本月累積運轉820小時。"
       }
     ]
   },

@@ -8,14 +8,18 @@ import {Scene} from 'three';
 // Adapter for the existing three-view geometry API. The reference shaders,
 // ribbon, bloom stage, materials and parameters are retained without edits.
 export class Glow {
-  paths=new Map();idlePaths=new Map();disabled=false;visible=true;sequence=0;time=0;
+  paths=new Map();idlePaths=new Map();disabled=false;visible=true;paused=false;sequence=0;time=0;
   constructor(container,width,height){
     this.width=width;this.height=height;
+    // iPad: ~30 renders per second (?glowfps=60 to compare). Thresholds sit just
+    // below the frame interval so 60/120 Hz displays skip whole frames evenly.
+    const fps=Number(new URLSearchParams(location.search).get('glowfps'))||30;
+    this.minFrameMs=container.classList.contains('graph-scene')?(fps>=60?14:1000/fps-3):0;this.lastRender=0;
     this.stableRidge=!container.classList.contains('wall-scene');
     if(new URLSearchParams(location.search).has('nofx')){this.disabled=true;return;}
     const canvas=document.createElement('canvas');canvas.className='glow-canvas';container.prepend(canvas);
     try{
-      this.stage=createStage(canvas,width/height,{transparent:!container.classList.contains('wall-scene')});
+      this.stage=createStage(canvas,width/height,{transparent:!container.classList.contains('wall-scene'),antialias:!container.classList.contains('graph-scene')});
       canvas.style.width='100%';canvas.style.height='100%';
       canvas.addEventListener('webglcontextlost',event=>{event.preventDefault();this.disabled=true;cancelAnimationFrame(this.frame);canvas.hidden=true;});
       this.last=performance.now();this.animate=this.animate.bind(this);this.frame=requestAnimationFrame(this.animate);
@@ -78,7 +82,13 @@ export class Glow {
   }
   animate(now){
     if(this.disabled)return;
-    if(!this.visible||document.hidden){this.last=now;this.frame=requestAnimationFrame(this.animate);return;}
+    if(!this.visible||this.paused||document.hidden){this.last=now;this.frame=requestAnimationFrame(this.animate);return;}
+    // Clear the last fading path once, then skip empty bloom passes.
+    const empty=!this.paths.size&&!this.frameGlow;
+    if(empty&&this.emptyRendered){this.last=now;this.frame=requestAnimationFrame(this.animate);return;}
+    if(this.minFrameMs&&now-this.lastRender<this.minFrameMs){this.frame=requestAnimationFrame(this.animate);return;}
+    this.lastRender=now;
+    this.emptyRendered=empty;
     const dt=Math.min(.05,(now-this.last)/1000);this.last=now;this.time+=dt;
     const wave=period=>PARAMS.breathe.lo+(1-PARAMS.breathe.lo)*(.5+.5*Math.cos(this.time*2*Math.PI/period));
     for(const[key,item]of this.paths){

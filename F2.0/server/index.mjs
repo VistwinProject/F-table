@@ -10,6 +10,8 @@ import { DEVICES, BY_ID, TIMING } from '../src/devices.js';
 const root = fileURLToPath(new URL('../', import.meta.url));
 const live = process.argv.includes('--live');
 const sim = process.argv.includes('--sim') || (live && !process.argv.includes('--no-sim'));
+const portBase = Number(process.env.F_PORT_BASE || 6273);
+if(!Number.isInteger(portBase)||portBase<1024||portBase>65533)throw Error('Invalid F_PORT_BASE');
 const slots = new Map();
 let introPhase='ready',introToken=0;
 const connectedReaders = new Map();
@@ -22,7 +24,7 @@ mime['.wav']='audio/wav';
 async function serve(req,res) {
   try {
     const url = new URL(req.url,'http://localhost');
-    if (url.pathname === '/health') {res.writeHead(200,{'Content-Type':'application/json'});res.end(JSON.stringify(snapshot()));return;}
+    if (url.pathname === '/health') {res.writeHead(200,{'Content-Type':'application/json','Cache-Control':'no-store'});res.end(JSON.stringify({...snapshot(),app:'f-control-tower',mode:live?'live':'sim'}));return;}
     const p = decodeURIComponent(url.pathname);
     let file;
     if (['/','/wall','/table','/ipad'].includes(p)) file=path.join(root,'index.html');
@@ -106,7 +108,7 @@ wss.on('connection',(client,req)=>{
     else if(sim&&msg.type==='demo-stop')stopDemo();
   });
 });
-for(const [port,role]of [[6273,'table'],[6274,'wall'],[6275,'ipad']]){
+for(const [port,role]of [[portBase,'table'],[portBase+1,'wall'],[portBase+2,'ipad']]){
   const server=http.createServer(serve);
   server.on('upgrade',(req,socket,head)=>wss.handleUpgrade(req,socket,head,ws=>wss.emit('connection',ws,req)));
   server.on('error',err=>{console.error(`${role}: ${err.message}`);process.exitCode=1;for(const s of servers)s.close();});

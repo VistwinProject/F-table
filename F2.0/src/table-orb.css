@@ -3,3 +3,6 @@
 .table-core .intro-quantum[hidden]{display:none}
 .table .core-caption.audio-caption{width:620px;max-width:calc(100% - 40px);font-size:20px;line-height:1.55;letter-spacing:.04em;font-weight:400;text-align:center;white-space:normal;color:#e9f3fa;text-shadow:0 2px 8px #000b;pointer-events:none}
 .table .core-caption.audio-caption:empty{visibility:hidden}
+
+.table .welcome-caption.audio-caption{width:900px;max-width:calc(100vw - 80px);min-height:84px;margin:0 auto 18px;font-size:30px;line-height:1.5;letter-spacing:.04em;font-weight:400;text-align:center;white-space:normal;color:#e9f3fa;text-shadow:0 2px 8px #000b;pointer-events:none}
+.table .welcome-caption.audio-caption:empty{visibility:hidden}

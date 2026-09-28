@@ -22,7 +22,6 @@
 .table-quick-facts .device-facts>div:last-child{border-bottom:0}
 .table-quick-facts .device-facts dd{overflow-wrap:anywhere}
 .table-detail-hint{margin:auto 0 4px;text-align:center;font-size:18px;line-height:1.7;color:var(--muted)}
-.ipad .device-reading{white-space:normal;line-height:1.4;font-size:14px}
 
 /* iPad device analytics: client snapshot plus explicitly simulated history. */
 .ipad .detail-card{width:min(1080px,96vw);padding:28px;scrollbar-width:thin;scrollbar-color:#92b8cc55 transparent}
@@ -114,3 +113,65 @@
 .table #info-panel .system-status{bottom:48px}
 .table-waiting-note{position:absolute;left:34px;right:34px;bottom:18px;text-align:center}
 .table-waiting-note .table-insight-note{margin:0;font-size:12px;line-height:1.5}
+
+/* iPad main screen font sizes (2026-09-24). */
+.ipad .brand{font-size:20px}
+.ipad .brand b{width:36px;height:36px;border-radius:9px;font-size:20px}
+.ipad .status-right{font-size:20px}
+.ipad #complete-badge{font-size:25px}
+.ipad .device-copy{font-size:30px}
+.ipad .graph-hub span{width:104px;height:104px;font-size:30px;line-height:32px}
+.ipad .graph-hub span,.ipad .graph-hub.active span{border:0;background:none;box-shadow:none}
+.ipad .reset{font-size:25px}
+
+/* iPad appliance detail panel: font sizes x1.5 (2026-09-24). */
+.ipad .detail-header h1{font-size:39px}
+.ipad .detail-header p{font-size:18px}
+.ipad .detail-card h3{font-size:24px}
+.ipad .detail-card .relation-list>div{font-size:18px}
+.ipad .detail-card .sample-label{font-size:16.5px}
+.ipad .detail-card .insight-intro{font-size:19.5px}
+.ipad .detail-card .insight-intro>span:last-child{font-size:18px}
+.ipad .detail-card .insight-disclaimer{font-size:18px}
+.ipad .detail-card .insight-tabs button{font-size:21px}
+.ipad .detail-card .insight-box h3{font-size:22.5px}
+.ipad .detail-card .insight-box p{font-size:19.5px}
+.ipad .detail-card .insight-section-title>span{font-size:16.5px}
+.ipad .detail-card .insight-box .insight-footnote{font-size:16.5px}
+.ipad .detail-card .insight-box .device-facts{font-size:21px}
+.ipad .detail-card .insight-kpis span{font-size:18px}
+.ipad .detail-card .insight-kpis strong{font-size:36px}
+.ipad .detail-card .insight-kpis small{font-size:16.5px}
+.ipad .detail-card .insight-ring{flex-basis:140px;width:140px;height:140px}
+.ipad .detail-card .insight-ring strong{font-size:43.5px}
+.ipad .detail-card .insight-ring small{font-size:19.5px}
+.ipad .detail-card .insight-condition p{font-size:18px}
+.ipad .detail-card .insight-box .insight-next-date{font-size:36px}
+.ipad .detail-card .insight-pill{font-size:16.5px}
+.ipad .detail-card .insight-bars{height:240px}
+.ipad .detail-card .insight-bar-col>span,.ipad .detail-card .insight-bar-col>small{font-size:16.5px}
+.ipad .detail-card .insight-ranking>div{font-size:19.5px}
+.ipad .detail-card .insight-ranking small{min-width:66px;font-size:16.5px}
+.ipad .detail-card .insight-timeline time{flex-basis:200px;font-size:19.5px}
+.ipad .detail-card .insight-timeline strong{font-size:21px}
+.ipad .detail-card .insight-timeline span{font-size:16.5px}
+.ipad .detail-card .insight-history{font-size:19.5px}
+.ipad .detail-card .insight-history th{font-size:16.5px}
+.ipad .detail-card .environment-grid p,.ipad .detail-card .environment-grid small{font-size:16.5px}
+.ipad .detail-card .environment-grid strong{font-size:34.5px}
+.ipad .detail-card .spark-labels{font-size:15px}
+.ipad .device-card{width:300px}
+
+/* iPad performance: the glow canvas repaints every frame, so frosted blur
+   behind the cards and the detail overlay was recomputed on every frame. */
+.ipad .device-card.glass{backdrop-filter:none;-webkit-backdrop-filter:none;background:linear-gradient(145deg,rgba(241,250,255,.12),rgba(198,225,239,.025) 38%,rgba(164,197,216,.065)),rgba(18,28,38,.86)}
+.ipad .detail-backdrop{background:rgba(7,10,14,.55);backdrop-filter:none;-webkit-backdrop-filter:none}
+/* While the detail panel is open, hold the animations behind its frosted card. */
+.ipad.detail-open .graph-node .node-icon,.ipad.detail-open .graph-node .appliance-icon *,.ipad.detail-open .device-card .device-indicator::before{animation-play-state:paused}
+/* The start prompt keeps breathing after the welcome screen is hidden. */
+.ipad .welcome.dismissed .intro-prompt{animation:none}
+/* iPad completion screen: text x1.5 (2026-09-24). */
+.ipad .completion p{font-size:28px;letter-spacing:12px;margin-bottom:40px}
+.ipad .completion h1{font-size:68px;letter-spacing:3px;margin-bottom:44px}
+.ipad .completion h2{font-size:36px}
+.ipad .completion button{font-size:27px;padding:16px 36px;border-radius:40px;margin-top:44px}

@@ -1,6 +1,7 @@
+import {batchFrame} from './frame-batch.js';
 import {DEVICES,BY_ID,RELATIONS,LEFT,RIGHT,WALL_HUB,SCREEN,GRAPH_HUB,TABLE_HUB,SLOTS,TIMING} from './devices.js';
 import {Session} from './session.js';
-import {PANEL_CONTENT,TABLE_CONTENT,IPAD_SUMMARY,panelFacts} from './panel-content.js';
+import {PANEL_CONTENT,TABLE_CONTENT,panelFacts} from './panel-content.js';
 import {tableInsights,tableGauge,tableSnapshotNote} from './table-insights.js';
 import {ipadDetail,insightPanel} from './ipad-insights.js';
 import {applianceIcon} from './appliance-icons.js';
@@ -72,12 +73,12 @@ function buildTable(){
 function graphPosition(id){const d=BY_ID[id];return positioned('node-'+id,d.pos[0]*1920,d.pos[1]*1080);}
 function hubPosition(){return positioned('hub',...GRAPH_HUB);}
 function buildIpad(){
-  stage.innerHTML=`<header class="statusbar"><div class="brand"><b>F</b><span>AI 大腦控制塔</span></div><div class="status-right"><span id="complete-badge">全屋連動完成</span><span>已放置 <strong id="counter">0</strong> / 9</span><span class="connection"><i></i><span id="connection-label">連線中</span></span></div></header><div id="scene" class="graph-scene"><img class="floorplan" src="/floorplan-lineart-v2.png" alt="智慧家庭灰階空間線稿圖"><div id="graph-lines"></div></div><button class="reset" data-action="reset">↶ 重置</button>`;
+  stage.innerHTML=`<header class="statusbar"><div class="brand"><b>F</b><span>AI 大腦控制塔</span></div><div class="status-right"><span id="complete-badge">全屋連動完成</span><span class="connection"><i></i><span id="connection-label">連線中</span></span></div></header><div id="scene" class="graph-scene"><img class="floorplan" src="/floorplan-lineart-v2.png" alt="智慧家庭灰階空間線稿圖"><div id="graph-lines"></div></div><button class="reset" data-action="reset">↶ 重置</button>`;
   scene=stage.querySelector('#scene');
   for(const[ids,right]of [[LEFT,false],[RIGHT,true]])ids.forEach((id,i)=>{
-    const d=BY_ID[id],x=right?1620:40,y=right?60+i*290:60+i*220;
+    const d=BY_ID[id],x=right?1570:40,y=right?60+i*290:60+i*220;
     const card=document.createElement('button');card.className=`glass device-card${right?' right':''}`;card.dataset.device=id;card.dataset.move='card-'+id;card.style.cssText=posStyle('card-'+id,x,y);
-    card.innerHTML=`<span class="device-indicator"></span><span class="device-copy"><span>${PANEL_CONTENT[id].label}</span><span class="device-reading">${d.sub}</span></span>`;scene.append(card);
+    card.innerHTML=`<span class="device-indicator"></span><span class="device-copy"><span>${PANEL_CONTENT[id].label}</span></span>`;scene.append(card);
   });
   for(const d of DEVICES){
     const p=graphPosition(d.id);const node=document.createElement('button');node.className='graph-node';node.dataset.node=d.id;node.dataset.move='node-'+d.id;node.setAttribute('aria-label',d.label+'詳細資料');node.style.cssText=`left:${p[0]}px;top:${p[1]}px`;node.innerHTML=applianceIcon(d.id);scene.append(node);
@@ -86,12 +87,15 @@ function buildIpad(){
   glow=new Glow(scene,1920,1080);
 }
 if(role==='wall')buildWall();else if(role==='table')buildTable();else buildIpad();
-if(role!=='wall')stage.insertAdjacentHTML('beforeend',`<div class="welcome" id="welcome"><div><p class="welcome-eyebrow">歡　迎　來　到</p><h1>AI 大腦控制塔</h1><p class="welcome-instruction">請拿取前方設備裝置，放置相對的感應範圍，<br>開始將居家設備連結到 AI 大腦！</p>${role==='ipad'?'<button data-action="start">點擊任意位置開始</button>':''}</div></div>`);
+if(role!=='wall')stage.insertAdjacentHTML('beforeend',`<div class="welcome" id="welcome"><div><h1>AI 大腦控制塔</h1><p class="welcome-instruction">請拿取前方設備裝置，放置相對的感應範圍，<br>開始將居家設備連結到 AI 大腦！</p>${role==='ipad'?'<button data-action="start">點擊任意位置開始</button>':''}</div></div>`);
 
 if(role==='table'){
   const welcome=stage.querySelector('#welcome'),content=welcome.firstElementChild;
   const sphere=document.createElement('div');sphere.className='intro-sphere table-welcome-orb';sphere.setAttribute('aria-hidden','true');
   content.insertBefore(sphere,content.querySelector('.welcome-instruction'));
+  const caption=document.createElement('div');caption.className='welcome-caption audio-caption';
+  caption.setAttribute('aria-label','開場語音字幕');
+  sphere.after(caption);
   let disposed=false,disposeOrb;
   addEventListener('pagehide',()=>{disposed=true;disposeOrb?.();},{once:true});
   import('./intro-quantum.js').then(({createIntroQuantum})=>{
@@ -170,13 +174,17 @@ function updateFocus(id){
   },240);
 }
 addEventListener('pagehide',()=>{clearTimeout(focusTimer);stopMetricEntry();for(const animation of focusAnimations)animation.cancel();},{once:true});
-function startRotation(){clearInterval(rotation);if(role!=='table')return;updateFocus(state.focus);rotation=setInterval(()=>{if(state.active.length<2)return;const i=state.active.indexOf(focused);updateFocus(state.active[(i+1)%state.active.length]);},TIMING.rotation);}
+function startRotation(){clearInterval(rotation);if(role!=='table')return;updateFocus(state.focus);rotation=setInterval(()=>{if(document.hidden||!state.session||state.active.length<2)return;const i=state.active.indexOf(focused);updateFocus(state.active[(i+1)%state.active.length]);},TIMING.rotation);}
 function addLight(paths,key,points,beam=false,width=1.8,opacity=1,period=1.5){paths.push({key,points,beam,width,opacity,period,tuneWidth:beam?tune.beamWidth:tune.lineWidth,minCorePx:tune.minCorePx,phase:paths.length*47});}
 function renderWall(active){
   glow.setFrame(tune);
-  const paths=[],[fx,fy,fw,fh,fr]=tune.frame;addLight(paths,'frame',rect(fx,fy,fw,fh,fr),false,1.1,.8,3);
-  for(const x of tune.vlines)addLight(paths,'v'+x,[[x,fy],[x,fy+fh]],false,.8,.65,3);
-  for(const y of tune.hlines)addLight(paths,'h'+y,[[fx,y],[fx+fw,y]],false,.8,.65,3);
+  const paths=[],[fx,fy,fw,fh,fr]=tune.frame;
+  scene.querySelector('.wall-grid').style.display=tune.showFrame===false?'none':'';
+  if(tune.showFrame!==false){
+    addLight(paths,'frame',rect(fx,fy,fw,fh,fr),false,1.1,.8,3);
+    for(const x of tune.vlines)addLight(paths,'v'+x,[[x,fy],[x,fy+fh]],false,.8,.65,3);
+    for(const y of tune.hlines)addLight(paths,'h'+y,[[fx,y],[fx+fw,y]],false,.8,.65,3);
+  }
   for(const d of DEVICES){
     const on=active.includes(d.id);scene.querySelector(`[data-panel="${d.id}"]`)?.classList.toggle('active',on);scene.querySelector(`[data-photo="${d.id}"]`).classList.toggle('active',on);scene.querySelector(`[data-wire="${d.id}"]`).classList.toggle('active',on);scene.querySelector(`[data-operation="${d.id}"]`).classList.toggle('active',on);
     const silhouette=wallSilhouette(d,tune);
@@ -228,19 +236,19 @@ function renderGraph(){
   for(const [ids,right]of [[LEFT,false],[RIGHT,true]])ids.forEach((id,i)=>{
     const d=BY_ID[id],on=active.includes(id),p=graphPosition(id),card=scene.querySelector(`[data-device="${id}"]`),node=scene.querySelector(`[data-node="${id}"]`);
     card.classList.toggle('active',on);card.setAttribute('aria-disabled',String(!on));node.classList.toggle('active',on);node.disabled=!on&&!fullEditor?.open;
-    card.querySelector('.device-reading').innerHTML=on?IPAD_SUMMARY[id]:d.sub;
-    const cp=positioned('card-'+id,right?1620:40,right?60+i*290:60+i*220);
-    svgLines.push(`<polyline class="leader ${on?'active':''}" points="${svgPoints([[cp[0]+(right?0:250),cp[1]+46],p])}"/>`);
+    const cp=positioned('card-'+id,right?1570:40,right?60+i*290:60+i*220);
+    svgLines.push(`<polyline class="leader ${on?'active':''}" points="${svgPoints([[cp[0]+(right?0:300),cp[1]+46],p])}"/>`);
     if(on){addLight(paths,'node-'+id,ring(...p,tune.ringR),false,1.3);const route=between(p,hub,tune.ringR+2,tune.hubR+2);addLight(paths,'node-link-'+id,route,false,1.4);addLight(paths,'node-packet-'+id,route,true,2.6);}
   });
   for(const[a,b,label]of RELATIONS)if(active.includes(a)&&active.includes(b)){
     const points=between(graphPosition(a),graphPosition(b),tune.ringR,tune.ringR);addLight(paths,'relation-'+a+'-'+b,points,false,1.3,.8);svgLines.push(`<polyline class="relation" points="${svgPoints(points)}"><title>${label}</title></polyline>`);
   }
-  scene.querySelector('#graph-lines').innerHTML=svg(svgLines.join(''));
+  const lines=scene.querySelector('#graph-lines'),markup=svg(svgLines.join(''));
+  if(lines.dataset.markup!==markup){lines.innerHTML=markup;lines.dataset.markup=markup;}
   scene.querySelector('.graph-hub').classList.toggle('active',active.length>0);
   if(active.length)addLight(paths,'hub',ring(...hub,tune.hubR),false,3.5);
   glow.setPaths(paths);
-  stage.querySelector('#counter').textContent=active.length;
+
   stage.querySelector('#connection-label').textContent=state.online?'已連線':'重新連線中';stage.querySelector('.connection').classList.toggle('offline',!state.online);
   stage.querySelector('#complete-badge').classList.toggle('show',active.length===9);
   if(active.length<9||!state.completionAudioReady){
@@ -256,7 +264,7 @@ function renderGraph(){
   completionAudio?.sync(show,!!state.suppressCompletionAudio||!!state.cancelledAudio);
   if(detail&&!active.includes(detail))closeDetail();
 }
-function render(eventType='state'){
+function render(){
   intro?.sync(state);
   glow.visible=role==='wall'||state.session||!!fullEditor?.open;
   const active=role==='wall'&&params.has('all')?DEVICES.map(d=>d.id):state.active;
@@ -267,14 +275,25 @@ function render(eventType='state'){
   tools.querySelector('#server-status').textContent=state.online?'三端同步已連線':'重新連線中';
   tools.querySelector('#demo-button').textContent=state.demo?'停止展示':'自動展示';
   for(const b of tools.querySelectorAll('[data-toggle]')){b.classList.toggle('selected',!!state.slots[b.dataset.toggle]?.data);b.setAttribute('aria-pressed',String(!!state.slots[b.dataset.toggle]?.data));b.disabled=!state.online;}
-  if(['snapshot','tag-present','tag-remove','reader-disconnected','session-end'].includes(eventType))startRotation();
+
 }
 session=new Session(role);state=session.state;
 if(role==='table')setupTableAudio({session,notify});
 intro=createIntro({stage,role,notify,session});
 completionAudio=createCompletionAudio({stage,role,notify,session});
 createDeviceAudio({session,role,notify});
-session.addEventListener('change',({detail:event})=>{state=event.state;if(event.type==='audio-stop')dispatchEvent(new Event('f-stop-audio'));render(event.type);});
+// Process audio immediately; collapse bursts of NFC updates into one visual frame.
+const queueRender=batchFrame(events=>{
+  render();
+  if(['snapshot','tag-present','tag-remove','reader-disconnected','session-end'].some(type=>events.has(type)))startRotation();
+});
+session.addEventListener('change',({detail:event})=>{
+  state=event.state;
+  if(event.type==='audio-stop')dispatchEvent(new Event('f-stop-audio'));
+  intro?.sync(state);
+  queueRender(event.type);
+});
+addEventListener('pagehide',()=>{queueRender.cancel();clearInterval(rotation);clearTimeout(completionTimer);},{once:true});
 render();if(role==='table')updateFocus(null);
 fullEditor=createEditor({role,stage,scene,tune,positions:overrides,refresh:()=>render(),notify,initialOpen:params.has('edit')});
 glow.visible=role==='wall'||state.session||fullEditor.open;
@@ -283,11 +302,13 @@ glow.prewarm(tune);
 function send(type,fields){if(!session.send(type,fields)){notify('連線中斷，正在重新連線；恢復後可繼續操作。');return false;}return true;}
 function toggle(slot){if(!state.sim){notify('現場模式請使用實體 NFC 卡片。');return;}send('simulate',{action:'toggle',slot_index:Number(slot)});}
 let detailOpener=null;
-function closeDetail(){document.querySelector('.detail-backdrop')?.remove();detail=null;if(detailOpener?.isConnected)detailOpener.focus();detailOpener=null;}
+// iPad: freeze the glow while the detail panel covers it, so the blur behind it is not recomputed every frame.
+function syncGlowPause(){if(role!=='ipad')return;if(glow)glow.paused=!!detail;document.body.classList.toggle('detail-open',!!detail);}
+function closeDetail(){document.querySelector('.detail-backdrop')?.remove();detail=null;syncGlowPause();if(detailOpener?.isConnected)detailOpener.focus();detailOpener=null;}
 function showDetail(id){
   if(!state.active.includes(id)){notify('請先將對應家電放上感應區。');return;}
-  const opener=document.activeElement;closeDetail();detailOpener=opener;detail=id;const d={...BY_ID[id],label:PANEL_CONTENT[id].label};
-  const modal=document.createElement('div');modal.className='detail-backdrop';modal.innerHTML=`<section class="glass detail-card" role="dialog" aria-modal="true" aria-label="${d.label}詳細資料"><button class="close-detail" data-action="close-detail" aria-label="關閉">×</button><div class="detail-header"><img src="/appliances/${id}.webp" alt="${d.label}"><div><p>${d.code} · 已連線</p><h1>${d.label}</h1><p>${d.sub}</p></div></div><div class="detail-body">${role==='ipad'?ipadDetail(id):infoMarkup(d)}</div><h3>AI 連動關係</h3><div class="relation-list">${RELATIONS.filter(([a,b])=>a===id||b===id).map(([a,b,label])=>`<div><span>${label}</span><b>${state.active.includes(a)&&state.active.includes(b)?'已串聯':'等待設備'}</b></div>`).join('')}</div><p class="sample-label">展示數據 · 依業主提供文案呈現</p></section>`;
+  const opener=document.activeElement;closeDetail();detailOpener=opener;detail=id;syncGlowPause();const d={...BY_ID[id],label:PANEL_CONTENT[id].label};
+  const modal=document.createElement('div');modal.className='detail-backdrop';modal.innerHTML=`<section class="glass detail-card" role="dialog" aria-modal="true" aria-label="${d.label}詳細資料"><button class="close-detail" data-action="close-detail" aria-label="關閉">×</button><div class="detail-header"><img src="/appliances/${id}.webp" alt="${d.label}"><div>${role==='ipad'?'':`<p>${d.code} · 已連線</p>`}<h1>${d.label}</h1>${role==='ipad'?'':`<p>${d.sub}</p>`}</div></div><div class="detail-body">${role==='ipad'?ipadDetail(id):infoMarkup(d)}</div><h3>AI 連動關係</h3><div class="relation-list">${RELATIONS.filter(([a,b])=>a===id||b===id).map(([a,b,label])=>`<div><span>${label}</span><b>${state.active.includes(a)&&state.active.includes(b)?'已串聯':'等待設備'}</b></div>`).join('')}</div><p class="sample-label">展示數據 · 依業主提供文案呈現</p></section>`;
   modal.addEventListener('click',e=>{if(e.target===modal)closeDetail();});app.append(modal);modal.querySelector('.close-detail').focus();
   const selectView=(button)=>{
     modal.querySelectorAll('[data-insight-view]').forEach(tab=>{const selected=tab===button;tab.setAttribute('aria-selected',String(selected));tab.tabIndex=selected?0:-1;});
