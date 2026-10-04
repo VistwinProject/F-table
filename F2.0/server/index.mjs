@@ -1,4 +1,5 @@
 import http from 'node:http';
+import {monitorDisplays} from './display-monitor.mjs';
 import { readFile, stat } from 'node:fs/promises';
 import { createReadStream } from 'node:fs';
 import path from 'node:path';
@@ -22,24 +23,28 @@ let completionAudioReady=false, finalAudioSlot=null;
 const servers = [];
 mime['.wav']='audio/wav';
 async function serve(req,res) {
+  const roleRoot = req.socket.localPort===portBase+1 ? process.env.F_WALL_ROOT : req.socket.localPort===portBase+2 ? process.env.F_IPAD_ROOT : null;
+  const contentRoot = roleRoot ? path.resolve(roleRoot) : root;
   try {
     const url = new URL(req.url,'http://localhost');
-    if (url.pathname === '/health') {res.writeHead(200,{'Content-Type':'application/json','Cache-Control':'no-store'});res.end(JSON.stringify({...snapshot(),app:'f-control-tower',mode:live?'live':'sim'}));return;}
+    if (url.pathname === '/health') {res.writeHead(200,{'Content-Type':'application/json','Cache-Control':'no-store'});res.end(JSON.stringify({...snapshot(),displayStatus:displayMonitor.status(),app:'f-control-tower',mode:live?'live':'sim'}));return;}
     const p = decodeURIComponent(url.pathname);
     let file;
-    if (['/','/wall','/table','/ipad'].includes(p)) file=path.join(root,'index.html');
-    else if (p.startsWith('/src/')) file=path.resolve(root,'.'+p);
+    if(p==='/graph' && process.env.F_GRAPH_ROOT){const graph=await readFile(path.join(process.env.F_GRAPH_ROOT,'index.html'));res.writeHead(200,{'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-store'});res.end(graph);return;}
+    if (['/','/wall','/table','/ipad'].includes(p)) file=path.join(contentRoot,'index.html');
+    else if (p.startsWith('/src/')) file=path.resolve(contentRoot,'.'+p);
     else if (p.startsWith('/vendor/')) file=path.resolve(root,'node_modules/three/build',p.slice(8));
     else if (p.startsWith('/vendor-addons/')) file=path.resolve(root,'node_modules/three/examples/jsm',p.slice(15));
-    else file=path.resolve(root,'public','.'+p);
-    const allowed=[path.join(root,'src')+path.sep,path.join(root,'public')+path.sep,path.join(root,'node_modules/three/build')+path.sep,path.join(root,'node_modules/three/examples/jsm')+path.sep];
-    if(file!==path.join(root,'index.html')&&!allowed.some(a=>file.startsWith(a))){res.writeHead(403);res.end();return;}
+    else file=path.resolve(contentRoot,'public','.'+p);
+    const allowed=[path.join(contentRoot,'src')+path.sep,path.join(contentRoot,'public')+path.sep,path.join(root,'node_modules/three/build')+path.sep,path.join(root,'node_modules/three/examples/jsm')+path.sep];
+    if(file!==path.join(contentRoot,'index.html')&&!allowed.some(a=>file.startsWith(a))){res.writeHead(403);res.end();return;}
     const s=await stat(file);if(!s.isFile())throw Error('not a file');
     res.writeHead(200,{'Content-Type':mime[path.extname(file)]||'application/octet-stream','Cache-Control':'no-store'});
     createReadStream(file).pipe(res);
   } catch {res.writeHead(404);res.end('Not found');}
 }
 const wss = new WebSocketServer({noServer:true,maxPayload:8192});
+const displayMonitor=monitorDisplays(wss,snapshot);
 function broadcast(event) {
   revision++;
   const text=JSON.stringify({...event,revision,at:Date.now()});
@@ -82,6 +87,16 @@ wss.on('connection',(client,req)=>{
   client.on('message',raw=>{
     let msg;try{msg=JSON.parse(String(raw));}catch{return;}
     if(!msg||typeof msg!=='object')return;
+    if(msg.type==='f-command'){
+      const requestId=msg.requestId,command=msg.command;
+      const valid=typeof requestId==='string'&&command&&['session-start','session-end','simulate','manual-trigger','manual-clear'].includes(command.type)&&
+        (!command.type.startsWith('manual-')||(sim&&(command.type==='manual-clear'||BY_ID[command.id])))&&
+        (command.type!=='simulate'||(sim&&(['all','clear'].includes(command.action)||(command.action==='toggle'&&Number.isInteger(command.slot_index)&&command.slot_index>=1&&command.slot_index<=9&&(!command.id||BY_ID[command.id])))));
+      if(!valid){client.send(JSON.stringify({type:'f-command-error',requestId,error:'Unsupported F command'}));return;}
+      msg=command;
+      queueMicrotask(()=>{if(client.readyState===WebSocket.OPEN)client.send(JSON.stringify({type:'f-command-accepted',requestId,revision}));});
+    }
+
     if(msg.type==='ping'){client.send(JSON.stringify({type:'pong'}));return;}
     if(msg.type==='intro-play'&&role==='ipad'&&!session){introToken++;introPhase='requested';broadcast({type:'intro-state',phase:introPhase,token:introToken});return;}
     if(msg.type==='intro-skip'&&role==='ipad'&&!session){introPhase='done';broadcast({type:'intro-state',phase:introPhase,token:introToken});return;}
@@ -94,7 +109,9 @@ wss.on('connection',(client,req)=>{
       return;
     }
     if(role==='wall'&&!sim)return;
-    if(msg.type==='session-start')start();
+    if(sim&&msg.type==='manual-trigger'){stopDemo();put(DEVICES.findIndex(d=>d.id===msg.id)+1,msg.id);}
+    else if(sim&&msg.type==='manual-clear'){stopDemo();broadcast({type:'audio-stop'});for(const [slot,d]of slots)if(d.data)remove(slot);}
+    else if(msg.type==='session-start')start();
     else if(msg.type==='session-end')reset();
     else if(sim&&msg.type==='simulate'){
       stopDemo();
@@ -112,7 +129,7 @@ for(const [port,role]of [[portBase,'table'],[portBase+1,'wall'],[portBase+2,'ipa
   const server=http.createServer(serve);
   server.on('upgrade',(req,socket,head)=>wss.handleUpgrade(req,socket,head,ws=>wss.emit('connection',ws,req)));
   server.on('error',err=>{console.error(`${role}: ${err.message}`);process.exitCode=1;for(const s of servers)s.close();});
-  server.listen(port,'0.0.0.0',()=>console.log(`F 2.0 ${role}: http://localhost:${port}/${role} (${live?(sim?'hardware + NFC simulation':'hardware'):'NFC simulation'})`));
+  server.listen(port,process.env.F_BIND_HOST||'0.0.0.0',()=>console.log(`F 2.0 ${role}: http://localhost:${port}/${role} (${live?(sim?'hardware + NFC simulation':'hardware'):'NFC simulation'})`));
   servers.push(server);
 }
 if(live){

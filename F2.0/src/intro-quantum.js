@@ -4,6 +4,7 @@ import {mountOrb} from '/anlb-orb/orb.js';
 // Only the public controller API is used; no shader or preset overrides.
 const hosts=new Set();
 let orb,container,frame=0,engaged=false,ready=false;
+let recoveryAttempts=0,retryAfter=0;
 let lastMotion=0,seenNfc=0,turn=0,turnTarget=0,spin=0,spinSpeed=0;
 const reducedMotion=matchMedia('(prefers-reduced-motion: reduce)');
 function update(){
@@ -11,6 +12,14 @@ function update(){
   if(document.hidden){lastMotion=0;return;}
   const host=[...hosts].find(item=>item.isVisible())||hosts.values().next().value;
   if(!host||!orb)return;
+  if(orb.canvas.dataset.orbHealth==='error'){
+    ready=false;for(const item of hosts)item.sphere.classList.remove('quantum-ready');
+    // Retry only while visible, at most twice per page. Keep failures observable.
+    if(!retryAfter)retryAfter=performance.now()+2000;
+    if(recoveryAttempts<2&&performance.now()>=retryAfter){
+      recoveryAttempts++;retryAfter=0;orb.dispose();engaged=false;mountCurrentOrb();
+    }
+  }
   if(container.parentElement!==host.sphere){
     container.parentElement?.classList.remove('quantum-ready');
     host.sphere.append(container);
@@ -39,18 +48,22 @@ function update(){
     `perspective(900px) rotateX(${tiltX}deg) rotateY(${tiltY}deg) rotateZ(${turn+spin}rad)`;
   container.style.transformOrigin='50% 50%';
 }
+function mountCurrentOrb(){
+  delete container.dataset.orbError;
+  orb=mountOrb(container);
+  const instance=orb;
+  orb.ready.then(()=>{if(orb===instance)ready=true;}).catch(error=>{
+    if(orb!==instance)return;
+    container.dataset.orbError=error.message;
+    console.warn('Approved ANLB orb unavailable:',error);
+  });
+}
 export function createIntroQuantum(sphere,getVoice,isVisible){
   const host={sphere,getVoice,isVisible};hosts.add(host);
   if(!orb){
     container=document.createElement('div');container.className='intro-quantum';
     container.setAttribute('aria-hidden','true');sphere.append(container);
-    orb=mountOrb(container);
-    const instance=orb;
-    orb.ready.then(()=>{if(orb===instance)ready=true;}).catch(error=>{
-      if(orb!==instance)return;
-      container.dataset.orbError=error.message;
-      console.warn('Approved ANLB orb unavailable:',error);
-    });
+    mountCurrentOrb();
     update();
   }
   return ()=>{
@@ -58,6 +71,7 @@ export function createIntroQuantum(sphere,getVoice,isVisible){
     if(!hosts.size){
       cancelAnimationFrame(frame);orb?.dispose();container?.remove();
       orb=null;container=null;engaged=false;ready=false;
+      recoveryAttempts=0;retryAfter=0;
       lastMotion=0;seenNfc=0;turn=0;turnTarget=0;spin=0;spinSpeed=0;
     }
   };
