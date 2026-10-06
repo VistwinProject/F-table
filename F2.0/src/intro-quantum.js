@@ -10,7 +10,7 @@ const reducedMotion=matchMedia('(prefers-reduced-motion: reduce)');
 function update(){
   frame=requestAnimationFrame(update);
   if(document.hidden){lastMotion=0;return;}
-  const host=[...hosts].find(item=>item.isVisible())||hosts.values().next().value;
+  const host=[...hosts].find(item=>item.sphere.isConnected&&item.isVisible());
   if(!host||!orb)return;
   if(orb.canvas.dataset.orbHealth==='error'){
     ready=false;for(const item of hosts)item.sphere.classList.remove('quantum-ready');
@@ -48,6 +48,10 @@ function update(){
     `perspective(900px) rotateX(${tiltX}deg) rotateY(${tiltY}deg) rotateZ(${turn+spin}rad)`;
   container.style.transformOrigin='50% 50%';
 }
+addEventListener('f-table-view-change',()=>{
+  const host=[...hosts].find(item=>item.sphere.isConnected&&item.isVisible());
+  if(host&&container){container.parentElement?.classList.remove('quantum-ready');host.sphere.append(container);if(ready)host.sphere.classList.add('quantum-ready');}
+});
 function mountCurrentOrb(){
   delete container.dataset.orbError;
   orb=mountOrb(container);
