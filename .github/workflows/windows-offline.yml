@@ -1,0 +1,37 @@
+name: Windows offline runtime
+on:
+  push:
+    branches: [codex/f-windows-offline-20261006]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  runtime:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24.15.0'
+          architecture: x64
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: npm ci --no-audit --no-fund
+        working-directory: F2.0
+      - name: Verify native NFC and assemble portable runtime
+        shell: pwsh
+        working-directory: F2.0
+        run: |
+          node -e "require('nfc-pcsc');require('ws');console.log('Windows x64 NFC module loaded')"
+          if ($LASTEXITCODE -ne 0) { throw 'Native module validation failed' }
+          New-Item -ItemType Directory -Force ../windows-runtime/runtime | Out-Null
+          Copy-Item (Get-Command node.exe).Source ../windows-runtime/runtime/node.exe
+          Invoke-WebRequest https://nodejs.org/dist/v24.15.0/LICENSE -OutFile ../windows-runtime/runtime/NODE-LICENSE
+          Copy-Item node_modules ../windows-runtime/node_modules -Recurse
+          node -e "require('fs').writeFileSync('../windows-runtime/build-info.json',JSON.stringify({platform:process.platform,arch:process.arch,node:process.version,nfcModuleLoaded:true,commit:process.env.GITHUB_SHA},null,2))"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: f-windows-x64-runtime
+          path: windows-runtime
+          retention-days: 14
