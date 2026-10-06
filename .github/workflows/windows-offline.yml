@@ -36,7 +36,7 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'Native module validation failed' }
           New-Item -ItemType Directory -Force ../windows-runtime/runtime | Out-Null
           Copy-Item (Get-Command node.exe).Source ../windows-runtime/runtime/node.exe
-          Invoke-WebRequest https://nodejs.org/dist/v24.15.0/LICENSE -OutFile ../windows-runtime/runtime/NODE-LICENSE
+          Copy-Item (Join-Path (Split-Path (Get-Command node.exe).Source) 'LICENSE') ../windows-runtime/runtime/NODE-LICENSE
           Copy-Item node_modules ../windows-runtime/node_modules -Recurse
           node -e "require('fs').writeFileSync('../windows-runtime/build-info.json',JSON.stringify({platform:process.platform,arch:process.arch,node:process.version,nfcModuleLoaded:true,commit:process.env.GITHUB_SHA},null,2))"
       - uses: actions/upload-artifact@v4
