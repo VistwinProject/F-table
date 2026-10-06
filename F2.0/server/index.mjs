@@ -1,6 +1,7 @@
 import http from 'node:http';
+import {createLedControl} from './led-control.mjs';
 import {monitorDisplays} from './display-monitor.mjs';
-import { readFile, stat } from 'node:fs/promises';
+import { readFile, stat, unlink } from 'node:fs/promises';
 import { createReadStream } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -23,6 +24,9 @@ function nfcEvent(type,details){nfcStatus.events.push({at:new Date().toISOString
 function nfcError(message){console.error('NFC:',message);nfcStatus.errors.push(message);if(nfcStatus.errors.length>20)nfcStatus.errors.shift();}
 let session = false, revision = 0, demoTimer = null, demoRunning = false;
 const mime = { '.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.json':'application/json','.png':'image/png','.webp':'image/webp','.svg':'image/svg+xml' };
+let ledConfig={};
+try{ledConfig=JSON.parse(await readFile(process.env.F_LED_CONFIG||new URL('./led-settings.json',import.meta.url),'utf8'));}catch(error){if(error.code!=='ENOENT')throw error;}
+const ledControl=createLedControl(ledConfig);
 const snapshot = () => ({type:'snapshot',version:2,revision,session,sim,demo:demoRunning,introPhase,introToken,completionAudioReady,slots:[...slots].map(([slot_index,data])=>({slot_index,...data}))});
 let completionAudioReady=false, finalAudioSlot=null;
 const servers = [];
@@ -33,10 +37,10 @@ async function serve(req,res) {
   const contentRoot = roleRoot ? path.resolve(roleRoot) : root;
   try {
     const url = new URL(req.url,'http://localhost');
-    if (url.pathname === '/health') {res.writeHead(200,{'Content-Type':'application/json','Cache-Control':'no-store'});res.end(JSON.stringify({...snapshot(),displayStatus:displayMonitor.status(),app:'f-control-tower',mode:live?'live':'sim',instance:process.env.F_INSTANCE_ID||null,nfc:{...nfcStatus,connected:connectedReaders.size}}));return;}
+    if (url.pathname === '/health') {res.writeHead(200,{'Content-Type':'application/json','Cache-Control':'no-store'});res.end(JSON.stringify({...snapshot(),displayStatus:displayMonitor.status(),app:'f-control-tower',mode:live?'live':'sim',instance:process.env.F_INSTANCE_ID||null,graphBundled:true,led:ledControl.status(),nfc:{...nfcStatus,connected:connectedReaders.size}}));return;}
     const p = decodeURIComponent(url.pathname);
     let file;
-    if(p==='/graph' && process.env.F_GRAPH_ROOT){const graph=await readFile(path.join(process.env.F_GRAPH_ROOT,'index.html'));res.writeHead(200,{'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-store'});res.end(graph);return;}
+    if(p==='/graph'){const graph=await readFile(path.join(process.env.F_GRAPH_ROOT||path.join(root,'public/graph'),'index.html'));res.writeHead(200,{'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-store'});res.end(graph);return;}
     if (['/','/wall','/table','/ipad'].includes(p)) file=path.join(contentRoot,'index.html');
     else if (p.startsWith('/src/')) file=path.resolve(contentRoot,'.'+p);
     else if (p.startsWith('/vendor/')) file=path.resolve(root,'node_modules/three/build',p.slice(8));
@@ -52,6 +56,7 @@ async function serve(req,res) {
 const wss = new WebSocketServer({noServer:true,maxPayload:8192});
 const displayMonitor=monitorDisplays(wss,snapshot);
 function broadcast(event) {
+  ledControl.sync(slots);
   revision++;
   const text=JSON.stringify({...event,revision,at:Date.now()});
   for(const client of wss.clients)if(client.readyState===WebSocket.OPEN)client.send(text);
@@ -175,10 +180,21 @@ if(live){
 }
 if(process.argv.includes('--demo')&&sim)runDemo();
 let shuttingDown=false;
-for(const signal of ['SIGINT','SIGTERM'])process.on(signal,()=>{
-  if(shuttingDown)return;shuttingDown=true;stopDemo();
+for(const signal of ['SIGINT','SIGTERM'])process.on(signal,async()=>{
+  if(shuttingDown)return;shuttingDown=true;stopDemo();await ledControl.stop();
   for(const reader of connectedReaders.values()){try{reader.close();}catch{}}
   hardware?.close();
   for(const c of wss.clients)c.close();wss.close();for(const s of servers)s.close();
   setTimeout(()=>{for(const c of wss.clients)c.terminate();for(const s of servers)s.closeAllConnections();},1000).unref();
 });
+
+// Windows launcher stop requests use a local file, scoped by installation ID.
+if(process.env.F_STOP_FILE&&process.env.F_INSTANCE_ID){
+  const timer=setInterval(async()=>{
+    try{
+      const value=(await readFile(process.env.F_STOP_FILE,'utf8')).trim();
+      if(value!==process.env.F_INSTANCE_ID)return;
+      await unlink(process.env.F_STOP_FILE);process.emit('SIGTERM');
+    }catch(error){if(error.code!=='ENOENT')console.error('Stop request:',error.message);}
+  },500);timer.unref();
+}
