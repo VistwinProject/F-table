@@ -4,7 +4,8 @@ import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {DEVICES} from '../src/devices.js';
 import {AUDIO_CAPTIONS} from '../src/audio-captions.js';
-import {WALL_PANEL_CONTENT,TABLE_CONTENT} from '../src/panel-content.js';
+import {WALL_PANEL_CONTENT} from '../src/panel-content.js';
+import {REPORT_TYPES,DEVICE_REPORT} from '../src/table-reports.js';
 const root=fileURLToPath(new URL('../',import.meta.url));
 const read=p=>readFile(path.join(root,p),'utf8');
 const seen=new Set();
@@ -50,6 +51,7 @@ for(const key of ['intro','completion',...DEVICES.map(d=>d.id)]){
 }
 assert.equal(WALL_PANEL_CONTENT.ac.rows.find(r=>r[0]==='下次維養')[1],'2026/10月');
 assert.ok(AUDIO_CAPTIONS.purifier.text.includes('63%'));
-assert.ok(TABLE_CONTENT.bathfan.rows.some(r=>r[1]==='15 分鐘'));
+for(const report of REPORT_TYPES)await access(path.join(root,'public',report.video));
+for(const d of DEVICES)assert.ok(REPORT_TYPES.some(report=>report.id===DEVICE_REPORT[d.id]),`${d.id}: report missing`);
 console.log(`PASS: ${seen.size} runtime modules, required assets, 11 WAV/caption timelines, clean device metadata and latest display values.`);
 console.log('Packaging: use src/public/server/windows + index.html/package*.json/*.cmd; exclude node_modules, dist, reference archives and machine-specific windows/settings.json.');

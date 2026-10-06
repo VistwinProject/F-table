@@ -27,5 +27,4 @@ export const SCREEN = [960,215,540,280];
 export const GRAPH_HUB = [990,555];
 export const TABLE_HUB = [1245,740];
 export const SLOTS = [[705,740],[895,625],[865,442],[1100,470],[1245,330],[1390,470],[1625,442],[1595,625],[1785,740]];
-export const TIMING = { transition: 280, welcome: 600, rotation: 8000, step: 2600, hold: 5000, clear: 420 };
-export const TREND = [3,4,5,5,7,11,17,26,34,39,44,47,58,43,21,23,26,30,34,36,34,36,34,13];
+export const TIMING = { transition: 280, welcome: 600, step: 2600, hold: 5000, clear: 420 };
