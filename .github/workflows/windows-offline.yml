@@ -19,6 +19,15 @@ jobs:
           python-version: '3.12'
       - run: npm ci --no-audit --no-fund
         working-directory: F2.0
+      - name: Validate launcher syntax and integration
+        shell: pwsh
+        working-directory: F2.0
+        run: |
+          powershell.exe -NoProfile -File scripts/check-windows.ps1
+          if ($LASTEXITCODE -ne 0) { throw 'PowerShell syntax check failed' }
+          '{}' | Set-Content server/uid-map.json
+          npm run check
+          if ($LASTEXITCODE -ne 0) { throw 'Integration checks failed' }
       - name: Verify native NFC and assemble portable runtime
         shell: pwsh
         working-directory: F2.0
