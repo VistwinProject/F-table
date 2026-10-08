@@ -33,6 +33,7 @@ try {
     if (-not $health) {
         # Do not inherit a developer's alternate port setting into the exhibition launcher.
         $env:F_PORT_BASE = '6273'
+        $env:F_REQUIRED_DISPLAYS = 'table,wall,graph'
         $env:F_INSTANCE_ID = $instance
         $env:F_STOP_FILE = Join-Path $runtime 'stop-request'
         Remove-Item $env:F_STOP_FILE -ErrorAction SilentlyContinue
@@ -56,6 +57,9 @@ try {
     if ($health.instance -ne $instance -or -not $health.graphBundled) { throw 'Another or older F server owns the ports. Stop that server before starting this package.' }
     if ($health.mode -ne $settings.mode -or ($settings.mode -eq 'live' -and $health.sim)) {
         throw 'A server with a different mode is already running. Close it before launching this configuration.'
+    }
+    if (($health.displayStatus.required -join ',') -ne 'table,wall,graph') {
+        throw 'Display requirements changed. Stop F Zone and start this package again.'
     }
     foreach ($port in @(6274,6275)) {
         $other = Invoke-RestMethod "http://127.0.0.1:$port/health" -TimeoutSec 2

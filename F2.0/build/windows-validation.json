@@ -1,0 +1,25 @@
+{
+  "date": "2026-10-06",
+  "run": "https://github.com/VistwinProject/F-table/actions/runs/37450810937",
+  "commit": "58f82d5",
+  "status": "success",
+  "platform": "win32",
+  "arch": "x64",
+  "node": "24.15.0",
+  "checks": [
+    "Windows PowerShell launcher syntax",
+    "14 integration/unit tests",
+    "11 audio/caption timelines",
+    "iPad insights",
+    "native nfc-pcsc module loaded"
+  ],
+  "localAdditionalChecks": [
+    "installation-scoped graceful stop: passed",
+    "15 total tests passed"
+  ],
+  "notVerified": [
+    "three physical HDMI displays",
+    "NFC hardware",
+    "physical LED controller (not selected)"
+  ]
+}

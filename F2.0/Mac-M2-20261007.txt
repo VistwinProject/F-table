@@ -1,0 +1,8 @@
+2026-10-07 r2 Mac mini M2：本機雙螢幕＋遠端 Graph
+本機僅開 Wall / Table，操作 iPad 使用 Wi-Fi :6275/ipad。
+Graph 由第二台 iPad 開啟 http://主機IP:6275/graph?ws=ws://主機IP:6273 再外接 HDMI 螢幕。
+必要回報恢復為 table,wall,graph；每個角色都必須唯一連線、回報目前 revision。accepted 不等於完成。
+Graph 離線、重複角色、舊 revision 均不能算 ready。
+更新舊安裝後先 Stop 再 Start，保留 .runtime/browser-* 校正及 server/reader-map.json。
+本次為本機安裝包更新，未推送遠端 repo、未部署現場 X。
+目標 Mac、兩台 iPad、外接螢幕、NFC、Wi-Fi 與音響仍待現場驗收。

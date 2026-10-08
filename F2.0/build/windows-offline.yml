@@ -1,7 +1,7 @@
 name: Windows offline runtime
 on:
   push:
-    branches: [codex/f-windows-offline-20261006, codex/formal-nfc-20261008]
+    branches: [codex/f-windows-offline-20261006]
   workflow_dispatch:
 permissions:
   contents: read
@@ -25,7 +25,7 @@ jobs:
         run: |
           powershell.exe -NoProfile -File scripts/check-windows.ps1
           if ($LASTEXITCODE -ne 0) { throw 'PowerShell syntax check failed' }
-          if (-not (Test-Path server/uid-map.json)) { '{}' | Set-Content server/uid-map.json }
+          '{}' | Set-Content server/uid-map.json
           npm run check
           if ($LASTEXITCODE -ne 0) { throw 'Integration checks failed' }
       - name: Verify native NFC and assemble portable runtime

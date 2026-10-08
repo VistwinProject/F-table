@@ -54,7 +54,7 @@ async function serve(req,res) {
   } catch {res.writeHead(404);res.end('Not found');}
 }
 const wss = new WebSocketServer({noServer:true,maxPayload:8192});
-const displayMonitor=monitorDisplays(wss,snapshot);
+const displayMonitor=monitorDisplays(wss,snapshot,process.env.F_REQUIRED_DISPLAYS?.split(',').map(role=>role.trim()));
 function broadcast(event) {
   ledControl.sync(slots);
   revision++;

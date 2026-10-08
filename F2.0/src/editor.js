@@ -107,7 +107,7 @@ export function createEditor({role,stage,scene,tune,positions,refresh,notify,ini
  }else body+=num('ringR','節點外圈半徑',4,40)+num('hubR','中樞環半徑',8,100)+num('dotSize','節點白點直徑',4,40);
  body+=`<h3>範例版發光線</h3>`+num('lineWidth','外圈／格線粗細',0,.04,.0005)+num('beamWidth','流動光束粗細',0,.04,.0005)+num('minCorePx','最小亮芯 px',1,5,.1);
  panel.innerHTML=`<header class="tune-head"><strong>${role.toUpperCase()} · E 編輯器</strong><button data-cmd="collapse" aria-label="收合">收合</button><button data-cmd="close" aria-label="關閉">關閉</button></header><div class="tune-body">${role==='wall'?`<nav>${[['block','家電遮罩'],['frame','外框格線'],['panel','資料面板']].map(([k,n])=>`<button data-tab="${k}" aria-pressed="${tab===k}">${n}</button>`).join('')}</nav>`:''}<p>拖曳校正；方向鍵微調，Shift 加速，Alt 取消吸附。按住 H 暫看原畫面。設定自動儲存在此瀏覽器。</p>${body}<footer class="tune-actions"><button data-cmd="export">匯出 JSON</button><button data-cmd="copy">複製設定</button><button data-cmd="import">匯入 JSON</button><button data-cmd="reset">恢復本介面預設</button></footer><input type="file" data-import accept="application/json,.json" hidden></div>`;
-
+ 
  }
  function drawSensingHandle(){
   if(!sensingHandle)return;sensingHandle.hidden=!open;if(!open)return;

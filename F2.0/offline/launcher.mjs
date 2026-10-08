@@ -3,6 +3,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {randomUUID} from 'node:crypto';
+import {networkInterfaces} from 'node:os';
 const root=fileURLToPath(new URL('../',import.meta.url));
 const dir=path.join(root,'.runtime');
 const stateFile=path.join(dir,'processes.json');
@@ -42,7 +43,7 @@ try{
     for(const p of Object.values(state.browsers))await stopRecord(p);
     await stopRecord(state.server);
     await fs.rm(stateFile,{force:true});
-    console.log('已關閉 F 區三個視窗與服務。');
+    console.log('已關閉 F 區專用視窗與服務。');
   }else{
     const config=await read(path.join(root,'offline/settings.json'));
     if(!['live','sim'].includes(config.mode))throw Error('mode 必須為 live 或 sim');
@@ -50,12 +51,13 @@ try{
     if(!process.argv.includes('--no-browser'))await fs.access(browser);
     let current=await health(6273);
     if(current&&(!owned(state.server)||current.instance!==state.instance))throw Error('6273 已有其他服務，請先關閉舊版 F 區服務。');
+    if(current&&current.displayStatus?.required?.join(',')!=='table,wall,graph')throw Error('顯示配置已變更，請先 Stop 再 Start。');
     if(current&&(current.mode!==config.mode||current.sim!==(config.mode==='sim')))throw Error('模式已變更，請先 Stop 再 Start。');
     if(!current){
       if(owned(state.server))throw Error('原服務未回應，請先 Stop 再 Start。');
       state.instance=randomUUID();
       const entry=path.join(root,'server/index.mjs');
-      state.server=await launch(process.execPath,[entry,`--${config.mode}`,...(config.mode==='live'?['--no-sim']:[])],entry,{F_PORT_BASE:'6273',F_INSTANCE_ID:state.instance});
+      state.server=await launch(process.execPath,[entry,`--${config.mode}`,...(config.mode==='live'?['--no-sim']:[])],entry,{F_PORT_BASE:'6273',F_INSTANCE_ID:state.instance,F_REQUIRED_DISPLAYS:'table,wall,graph'});
       await save();
     }
     let ready=false;
@@ -66,7 +68,10 @@ try{
       await sleep(200);
     }
     if(!ready)throw Error('三端服務尚未就緒，請查看 .runtime/exhibition.log');
-    if(!process.argv.includes('--no-browser'))for(const [i,role] of ['table','wall','ipad'].entries()){
+    // Retire legacy local iPad/Graph windows; iPad now connects over LAN.
+    for(const role of ['ipad','graph']){await stopRecord(state.browsers[role]);delete state.browsers[role];}
+    await save();
+    if(!process.argv.includes('--no-browser'))for(const [i,role] of ['table','wall'].entries()){
       if(owned(state.browsers[role]))continue;
       const profile=path.join(dir,`browser-${role}`),w=config.windows[role];
       const url=`http://localhost:${6273+i}/${role}?exhibition${role==='wall'?'&projection':''}`;
@@ -77,6 +82,8 @@ try{
     }
     console.log('F 區已啟動：Table 6273 / Wall 6274 / iPad 6275');
     console.log('讀卡診斷：http://localhost:6275/diagnostics.html');
-    console.log('iPad 使用 Sidecar 延伸時，將 iPad 視窗拖到 iPad 螢幕；Chrome 選單可進入全螢幕。');
+    console.log('本機僅開啟 Table、Wall；Graph 由第二台 iPad 輸出。iPad 與主機連接同一區網後，使用 Safari 開啟：');
+    for(const addresses of Object.values(networkInterfaces()))for(const a of addresses||[])if(a.family==='IPv4'&&!a.internal){console.log(`  iPad: http://${a.address}:6275/ipad`);console.log(`  Graph: http://${a.address}:6275/graph?ws=ws://${a.address}:6273`);}
+    console.log('首次將 Wall、Table 拖到各自螢幕，再從 Chrome 選單進入全螢幕。');
   }
 }finally{await fs.rm(lock,{recursive:true,force:true});}

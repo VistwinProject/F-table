@@ -1,25 +1,29 @@
 # F 區 Mac mini 離線安裝與實測
 
-版本：2026-10-06。適用 Apple Silicon（M 系列）Mac mini；以 macOS 15.6.1 / arm64 建置。Intel Mac 不適用本包。
+版本：2026-10-07 r2（M2 雙螢幕＋iPad Wi-Fi）。適用 Apple Silicon（M 系列）Mac mini；以 macOS 15.6.1 / arm64 建置。Intel Mac 不適用本包。
 
 ## 安裝與兩個快捷啟動檔
 
 1. 解壓縮整包到固定位置，不要只取出兩個快捷啟動檔。內含 Node 24.15.0、NFC 原生模組、三端程式與全部圖像／語音，不需 npm install 或網際網路。
 2. 使用主機已安裝的 Google Chrome（預設路徑 /Applications/Google Chrome.app）。本包不含 Chrome 與額外廠商驅動；若換到未安裝 Chrome 的 Mac，須事先準備離線安裝檔。可在 offline/settings.json 指定 Chrome 執行檔路徑。
-3. 雙擊 **Start-F.command**：開啟服務與 Table、Wall、iPad 三個專用視窗。預設 live 實體感應模式，不顯示模擬卡片；尚未接 reader 時會等待設備。
-4. 雙擊 **Stop-F.command**：關閉這組三個專用視窗與服務，保留視窗設定檔及校正資料。日常瀏覽器不受影響。Stop 不會解除 Sidecar。
+3. 雙擊 **Start-F.command**：開啟服務與 Table、Wall 兩個專用視窗。預設 live 實體感應模式，不顯示模擬卡片；尚未接 reader 時會等待設備。
+4. 雙擊 **Stop-F.command**：關閉這組兩個專用視窗與服務，保留視窗設定檔及校正資料。日常瀏覽器不受影響。iPad Safari 不會由主機關閉。
 5. 可在 Finder 對兩個檔案「製作替身」，將替身放到桌面。請勿把原始 .command 移離安裝包。macOS 若阻擋下載來源，依系統提示在「隱私權與安全性」允許此已確認來源的程式。
 6. 重複 Start 不會再開一組已由啟動器管理的程序。改 mode 或位置前先 Stop。記錄在 .runtime/exhibition.log；不要刪除 .runtime/browser-*，其中包含投影校正。
 
-## iPad 當作外接螢幕（Sidecar）
+## Wall／Table 雙螢幕與 iPad Wi-Fi
 
-先確認 Mac 與 iPad 支援 Sidecar，兩端使用相同 Apple Account。用 USB 連接、解鎖 iPad 並選擇信任 Mac；在 Mac「系統設定 → 顯示器 → 加入顯示器」選 iPad，設為延伸顯示。
+本版配置為一般 M2 Mac mini（8GB）：只輸出 Wall、Table 兩個獨立畫面；Graph 由第二台 iPad 透過 Wi-Fi 顯示，再外接 HDMI 螢幕。先在 macOS 顯示器設定選「延伸顯示」，不要鏡像。第一次將兩個視窗拖到對應螢幕，再從 Chrome 選單進入全螢幕。offline/settings.json 可設定各視窗位置與尺寸，需依現場螢幕解析度及排列校正。
 
-Start 會開出三個獨立視窗；第一次把 iPad 視窗拖到 iPad、Table 和 Wall 拖到各自螢幕。需要全螢幕時使用 Chrome 的「顯示 → 進入全螢幕」。預設採重疊視窗，方便尚未接滿螢幕時操作；固定螢幕排列後，可調整 offline/settings.json 中各視窗的 x、y、width、height，供每次啟動使用。
+iPad 使用 Safari 開啟 http://主機區網IP:6275/ipad。Start 會列出主機可用的 IPv4 連線網址；選擇與 iPad 同區網的位址。Mac 可以使用有線網路，iPad 使用同一路由器 Wi-Fi，不需外部網際網路。避免訪客 Wi-Fi／用戶端隔離，並允許 macOS 防火牆讓包內 Node 接受區網連線。主機 IP 建議在路由器保留，避免重啟後變動。
 
-Sidecar 的觸控能力取決於 macOS／iPadOS 版本；本次 macOS 15 的配置先以 Mac 滑鼠／觸控板或 Apple Pencil 操作驗證。如果要用手指直接操作網頁，可改在 iPad Safari 開 http://主機區網IP:6275/ipad（同區網、不需外網）。Safari 模式是獨立裝置，Mac 的 Stop 可以停止其服務，但無法關閉 iPad Safari；若要求三個視窗一鍵全部關閉，請用 Sidecar。
+不使用 Sidecar、不在 Mac 上開 iPad 或 Graph 視窗。Stop 只關閉本機兩個專用視窗與服務，iPad Safari 留在原畫面；重新 Start 後確認 iPad 恢復連線。語音由 Table 共用出口播放。
 
-實際連接 iPad 後才能確認支援性、螢幕排列與操作。官方說明：https://support.apple.com/en-us/102597
+本安裝包以 F_REQUIRED_DISPLAYS=table,wall,graph 啟動服務。Table／Wall／Graph 都須回報目前 revision 才能 ready；Graph 未連線、重複 role 或舊 revision 都不能通過。操作 iPad 仍有獨立連線／revision 回報。
+
+第二台 iPad 開啟 http://主機IP:6275/graph?ws=ws://主機IP:6273（兩處主機IP都要替換）。保持 Safari 前景並外接螢幕；確認 NFC／重置同步。Graph 不在 Mac 本機自動開視窗。
+
+若搭配 X 總控，須採用本版 server/x-f-adapter.mjs（支援 f-status.required；未提供時仍以原三屏為準）。本次未修改或部署現場 X；本版恢復三屏確認要求，仍需以現場採用的 X adapter 做整合驗收。
 
 ## 九台 ACR122U／USB PC/SC
 
@@ -37,8 +41,8 @@ Sidecar 的觸控能力取決於 macOS／iPadOS 版本；本次 macOS 15 的配�
 3. 九張不同家電卡全部放上：三頁達 9/9；最後一段家電語音播完後，驗證全屋連動及完成頁。
 4. 拔掉一台 reader：該槽位及卡片狀態清除。插回後重新放卡，三頁恢復同步。
 5. 拿走所有卡片，iPad 重置：Table／iPad 回首頁、Wall 回待機，聲音停止。再開始下一輪。
-6. Stop：三個專用視窗關閉、6273–6275 服務停止。Start 後再次完成一輪。
-7. 無外部網際網路時重做上述流程。Sidecar 或 iPad Safari 所需的本機連線仍須保留。
+6. Stop：兩個專用視窗關閉、6273–6275 服務停止。Start 後再次完成一輪。
+7. 無外部網際網路時重做上述流程。iPad Safari 所需的區網連線仍須保留。
 
 ## 無硬體排練
 
@@ -49,3 +53,5 @@ Stop 後將 offline/settings.json 的 mode 改為 sim 再 Start。回到實測�
 2026-10-06 已通過程式與資源檢查，包含三端同步重置整合測試、九 reader 事件單元測試、素材／字幕／資料檢查。2026-10-01 曾用當時包內 Node 啟動實體模式，確認三個 Chrome 程序與 HTTP 入口、重複 Start 不增開、Stop 關閉四個程序並釋放三個埠。當時 reader 連接數為 0/9。電腦操作權限未開放，未做視窗像素檢查；iPad 外接畫面與九台 ACR122U 仍待接線實測。
 
 本版更新內容見「版本紀錄-2026-10-06.md」。新版首次開啟 Table 會套用新預設配置；原瀏覽器設定會先備份至本機儲存空間，後續編輯仍可正常保留。新前言字幕時間依音檔停頓估算，尚待逐句試聽校對；本版轉場及投影配置仍須現場目視確認。
+
+2026-10-07 驗證紀錄見 Mac-M2-20261007.txt。上方歷史實測不是本次現場硬體驗收。

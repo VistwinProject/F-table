@@ -1,4 +1,4 @@
-# F 區 Windows x64 三畫面離線包（2026-10-06）
+# F 區 Windows x64 三畫面離線包（2026-10-08 r2 正式 NFC）
 
 配置：Windows 10/11 x64 主機，三路獨立 HDMI 延伸輸出：Wall、Table、Graph。iPad 不佔 HDMI，透過同區網 Wi-Fi 連線。
 
@@ -23,7 +23,7 @@ iPad Safari 開 `http://主機IPv4:6275/ipad`。主機啟動時列出候選網�
 - 本機 Graph 入口 `/graph?ws=ws%3A%2F%2F127.0.0.1%3A6273`，接收同一服務的 NFC 與 revision，使用 role=graph 回報。
 - X 必要輸出是 Table、Wall、Graph；iPad 為額外控制端。只有服務在線不代表三屏已渲染完成。
 - 聲音仍由 Table 播放。Graph 無聲；在 Windows 音效設定選定現場音響輸出，不假定 HDMI 音訊會自動送往正確音響。
-- 檢查 server/uid-map.json，現場固定讀卡機位置後建立 server/reader-map.json。更新版本保留現場兩個映射檔。
+- 本版 server/uid-map.json 已登記九張正式卡；2026-10-08 在 Mac 單台 ACS ACR122U 上逐張讀取，重新啟動正式 NFC 服務後全部複驗通過，UID 無重複。完整對照與事件記錄見 formal-nfc-20261008.json。現場固定讀卡機位置後另建立 server/reader-map.json。
 - 診斷入口：http://主機IP:6275/diagnostics.html。先逐台驗證，再測九台同時感應。
 
 ## Wall 中央裝置燈條
@@ -44,10 +44,22 @@ iPad Safari 開 `http://主機IPv4:6275/ipad`。主機啟動時列出候選網�
 3. iPad 連入主機 IP，測試前言、感應、移除及重置；Table 語音如被瀏覽器政策阻擋，點一次啟用。
 4. 結束使用 Stop F Zone／Stop-F.cmd，會停止本包服務及三個專用視窗，不關閉一般瀏覽器，也不刪校正與映射。停止使用本機檔案請求，不提供公開網路關機 API。
 
-專用瀏覽器設定與日誌存 `%LOCALAPPDATA%\FZone-<安裝路徑識別碼>`。移動安裝資料夾會使用新的識別碼，需重新設定校正；勿刪原設定資料。更新時固定安裝路徑，保留 windows/settings.json、reader-map.json、uid-map.json、led-settings.json 與瀏覽器設定。
+專用瀏覽器設定與日誌存 `%LOCALAPPDATA%\FZone-<安裝路徑識別碼>`。移動安裝資料夾會使用新的識別碼，需重新設定校正；勿刪原設定資料。
+
+## 從舊包更新至正式 NFC 版
+
+1. 在舊安裝路徑先執行 Stop-F.cmd，另存整份舊安裝資料夾以便回退。
+2. 將新版解壓至暫存資料夾，再把包內檔案更新至原安裝路徑，避免改變瀏覽器校正資料的路徑識別碼。
+3. 保留原有 windows/settings.json、server/reader-map.json、server/led-settings.json 與瀏覽器設定；套用包內檔案後，從備份還原這三個現場設定檔（原本存在才還原）。包內 led-settings.json 是停用硬體的預設值。
+4. **這次必須採用新版 server/uid-map.json，不要將舊 UID 映射覆蓋回來。** 舊映射留在備份即可；新版包含本次九張正式卡。
+5. 執行 Start-F.cmd，在診斷頁逐張確認九種家電與移除事件，再驗證九台讀卡機、三屏、音訊與重置。全新安裝才先執行 Install-F.cmd 設定螢幕。
+
+本次 Mac 單讀卡機驗證不代表 Windows 現場或九台同時感應驗收；安裝包尚未自動套用到現場主機。
 
 ## 驗證界線
 
-自動測試涵蓋 NFC／多畫面重置、燈條聚合與延遲命令、Graph HTTP 入口。Windows 原生模組由 Windows CI 建置並測試載入。PowerShell 語法以 Windows 解析器檢查。
+自動測試涵蓋 NFC／多畫面重置、燈條聚合與延遲命令、Graph HTTP 入口。Windows 原生模組由 Windows CI 建置並測試載入。10 月 6 日版本的 PowerShell 語法曾以 Windows 解析器檢查；本次 10 月 8 日新增三屏設定與檢查，尚待 Windows 上重新執行 scripts/check-windows.ps1。
 
 三條 HDMI 視窗配置、Windows 防火牆、實際音響與九台讀卡機仍需現場驗收；燈條因控制器未定，尚無硬體驗收。Graph 的業主問答示範與歷史數值沿用來源，並非即時 AI 查詢。
+
+本版恢復 Windows x64 主機三路 HDMI 輸出，Graph 由主機直接顯示，不需要第二台 iPad。F_REQUIRED_DISPLAYS 固定為 table,wall,graph，只有三屏回報目前 revision 才算 ready。本次為本機離線包更新，未推送 repo 或部署現場 X。
