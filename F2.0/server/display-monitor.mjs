@@ -1,9 +1,10 @@
+import {sendBounded} from './transport-guard.mjs';
 // Transport liveness and application rendering are deliberately separate.
 export function monitorDisplays(wss, snapshot, required = ['table', 'wall', 'graph']) {
   const roles = ['table', 'wall', 'graph', 'ipad'];
   if(!required.length||new Set(required).size!==required.length||required.some(role=>!roles.includes(role)))throw Error('Invalid required display roles');
   const peers = new Map();
-  const send = (ws, value) => { if (ws.readyState === 1) ws.send(JSON.stringify(value)); };
+  const send = sendBounded;
   function status() {
     const displays = Object.fromEntries(roles.map(role => {
       const rows = [...peers.values()].filter(p => p.role === role);
@@ -22,6 +23,7 @@ export function monitorDisplays(wss, snapshot, required = ['table', 'wall', 'gra
     ws.on('close',()=>{peers.delete(ws);publish();});
     ws.on('message',raw=>{
       let msg;try{msg=JSON.parse(String(raw));}catch{return;}
+      if(!msg||typeof msg!=='object'||Array.isArray(msg))return;
       if(msg.type==='f-render' && roles.includes(role)) {
         if(!Number.isInteger(msg.revision)||msg.revision<0||msg.revision>snapshot().revision)return;
         peers.set(ws,{role,at:Date.now(),report:{revision:msg.revision,active:msg.active,
@@ -31,5 +33,7 @@ export function monitorDisplays(wss, snapshot, required = ['table', 'wall', 'gra
     });
   });
   const timer=setInterval(publish,2000);timer.unref();
-  return {status};
+  const stop=()=>clearInterval(timer);
+  wss.once('close',stop);
+  return {status,stop};
 }

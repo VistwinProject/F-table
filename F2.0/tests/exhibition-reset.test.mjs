@@ -49,6 +49,14 @@ test('iPad reset clears Table/Wall/Graph and controller, stops audio/demo, and p
     const ipad=peers[2];const send=(type,fields={})=>ipad.ws.send(JSON.stringify({type,...fields}));
     send('simulate',{action:'all'});
     await until(()=>peers.every(p=>p.state.active.length===9&&p.state.completionAudioReady));
+    // A display launched after all nine cards are present must receive the full state.
+    const late=new WebSocket(`ws://127.0.0.1:${base}?role=table`);
+    const snapshotPromise=once(late,'message');
+    try{
+      const [raw]=await snapshotPromise;
+      const occupied=reduce({slots:{},active:[]},JSON.parse(raw));
+      assert.equal(occupied.session,true);assert.equal(occupied.active.length,9);
+    }finally{late.close();await once(late,'close');}
     const activeHealth=await (await fetch(`http://127.0.0.1:${base}/health`)).json();
     assert.equal(activeHealth.led.desired,true);assert.equal(activeHealth.led.enabled,false);
     send('session-end');
@@ -69,6 +77,21 @@ test('iPad reset clears Table/Wall/Graph and controller, stops audio/demo, and p
     await until(()=>peers.every(p=>p.state.introPhase==='requested'));
     const health=await (await fetch(`http://127.0.0.1:${base}/health`)).json();
     assert.equal(health.app,'f-control-tower');assert.equal(health.mode,'sim');assert.equal(health.led.desired,false);assert.equal(health.graphBundled,true);
+    // Repeated full occupancy/removal exercises the real server, all views and revision protocol.
+    for(let cycle=0;cycle<100;cycle++){
+      send('simulate',{action:'all'});
+      await until(()=>peers.every(p=>p.state.active.length===9));
+      send('simulate',{action:'clear'});
+      await until(()=>peers.every(p=>p.state.active.length===0));
+      for(const p of peers)p.events.length=0;
+    }
+    const after=await (await fetch(`http://127.0.0.1:${base}/health`)).json();
+    assert.equal(after.slots.length,9);assert.ok(after.slots.every(s=>!s.uid&&!s.data));
+    assert.equal(after.runtime.websocketClients,4);
+    assert.ok(after.nfc.events.length<=after.runtime.nfcEventLimit);
+    assert.ok(after.nfc.errors.length<=after.runtime.nfcErrorLimit);
+    assert.ok(Number.isFinite(after.runtime.memory.rss));
+
   }finally{
     for(const p of peers)p.ws.terminate();
     if(server.exitCode===null){const exited=once(server,'exit');server.kill();await exited;}
